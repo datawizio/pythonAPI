@@ -130,14 +130,19 @@ class DataWiz:
                           interval = "days",
                           by = "total_price",):
         """
+        :param categories: id категорії або список id
         :param shops: id магазину, або список id
         :param products: id продукта, або список id
         :param date_from: початкова дата вибірки
         :param date_to: кінцева дата вибірки
         Якщо проміжок [date_from, date_to] не заданий, вибірка буде до date_to, починаючи з date_from, або за весь час
-        :param interval: [default: "days" ] залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках. Доступні параметри "days", "weeks", "months", "years"
-        :param by: [default: "total_price"] поле, по якому хочемо отримати результат вибірки. Доступні поля "total_price", "qty", "stock_qty", "receipts_qty"
+        :param interval: [default: "days" ] залежно від параметра, результат буде згруповано по днях, тижях,
+         місяцях, або роках. Доступні параметри "days", "weeks", "months", "years"
+        :param by: [default: "total_price"] поле, по якому хочемо отримати результат вибірки.
+                    Доступні параметри "total_price", "qty", "stock_qty", "receipts_qty"
         :param weekday: день тижня (понеділок - 0, неділя - 6)
+
+
         :return: повертає об’єкт DataFrame.
          _______________________________________
                  |product1|product2 |...productN|
