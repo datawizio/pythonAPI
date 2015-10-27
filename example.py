@@ -1,21 +1,21 @@
-"""
-Основний клас для роботи з API - datawiz.DW
-Ініціалізація:
-	api = datawiz.DW(API_KEY, API_SECRET)
-де API_KEY, API_SECRET - авторизаційні дані для доступу до API
-Якщо не задати, використовуються тестові параметри
-
-Методи класу:
-	api.get_products_sale(categories = None, shops = None, products = None,
-			      date_from = None, date_to = None, weekday = None,
-			      by = 'total_price', interval = 'days') - повертає об’єкт DataFrame з результатами вибірки
-
-Див. help(api.<func_name>) для детального опису
-"""
+'''
+Приклад роботи с datawiz API
+'''
 
 import datetime
-import datawiz as dw
+import datawiz 
+
 date_from = datetime.date(2015, 8, 9)
 date_to = datetime.date(2015, 9, 12)
-api = dw.DW()
-result = api.get_products_sale(shops = [305, 306, 318, 321], date_from = date_from, date_to = date_to, products = [2833024, 2286946], interval = dw.WEEKS, by='stock_qty')
+
+# Створення классу для вибору данних:
+# datawiz.DW(API_KEY, API_SECRET) 
+# якщо де API_KEY, API_SECRET - ключ і підпис користувача, якщо вони не задані то запускаємо для тестового користувача.
+dw = datawiz.DW()
+
+print dw.get_products_sale(products = [2833024, 2286946],by='stock_qty',
+				shops = [305, 306, 318, 321], 
+				date_from = date_from, 
+				date_to = date_to, 
+				products = [2833024, 2286946], 
+				interval = dw.WEEKS)
