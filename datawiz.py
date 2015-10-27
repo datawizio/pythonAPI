@@ -130,27 +130,50 @@ class DataWiz:
                           interval = "days",
                           by = "total_price",):
         """
-        :param categories: id категорії або список id
-        :param shops: id магазину, або список id
-        :param products: id продукта, або список id
-        :param date_from: початкова дата вибірки
-        :param date_to: кінцева дата вибірки
-        Якщо проміжок [date_from, date_to] не заданий, вибірка буде до date_to, починаючи з date_from, або за весь час
-        :param interval: [default: "days" ] залежно від параметра, результат буде згруповано по днях, тижях,
-         місяцях, або роках. Доступні параметри "days", "weeks", "months", "years"
-        :param by: [default: "total_price"] поле, по якому хочемо отримати результат вибірки.
-                    Доступні параметри "total_price", "qty", "stock_qty", "receipts_qty"
-        :param weekday: день тижня (понеділок - 0, неділя - 6)
-
-
-        :return: повертає об’єкт DataFrame.
-         _______________________________________
-                 |product1|product2 |...productN|
-        _______________________________________
-         date1   |   by   |    by  |    by    |
-         date2   |   by   |    by  |    by    |
-         ...
-         dateN   |   by   |    by  |    by    |
+        Parameters:
+        ------------
+        products: int,list
+            id товару, або список c id по яких буде робитися вибірка
+        categories: int,list 
+            id категорії, або список c id по яких буде робитися вибірка
+        shops: int,list
+            id магазину, або список c id по яких буде робитися вибірка
+        weekday:  int {понеділок - 0, неділя - 6}
+            день тижня по якому буде робитися вибірка
+        date_from: datetime
+            початкова дата вибірки
+        date_to: datetime
+            кінцева дата вибірки
+            Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
+            Якщо ж заданий тільки один с параметрів то замість іншого буде використанно перший або останій день відповідно
+                існування магазину.
+        interval: str,{"days","months","weeks","years", default: "days" } 
+            залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках. 
+        by: str, {"total_price", "qty", "stock_qty", "receipts_qty" default: "total_price"] 
+            поле, по якому хочемо отримати результат вибірки.
+            
+        Returns:
+        ------------
+            повертає об’єкт DataFrame c результатами вибірки
+             _______________________________________
+                     |product1|product2 |...productN|
+            _______________________________________
+             date1   |   by   |    by  |    by    |
+             date2   |   by   |    by  |    by    |
+             ...
+             dateN   |   by   |    by  |    by    |
+        
+        Examples:
+            dw = datawiz.DW()
+            dw.get_products_sale(products = [2833024, 2286946],by='total_price',
+				shops = [305, 306, 318, 321], 
+				date_from = datetime.date(2015, 8, 9), 
+				date_to = datetime.date(2015, 9, 9), 
+				products = [2833024, 2286946], 
+				interval = dw.WEEKS)
+			Повернути дані обороту по товарах с id [2833024, 2286946], від 9-8-2015 до 9-9-2015
+			по магазинах  [305, 306, 318, 321], згрупованні по тиднях
+				
         """
 
         # Формуємо словник параметрів і отримуємо результат запиту по цих параметрах
