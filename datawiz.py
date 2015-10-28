@@ -10,9 +10,9 @@ import pandas as pd
 import datetime
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
-MODEL_FIELDS = ['total_price', 'qty', 'receipts_qty', 'stock_qty',
-                'margin_price_total', 'stock_total_price'
-                ,'original_price_total', 'original_price_unit']
+MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
+                'profit', 'stock_value',
+                'sold_product_value', 'self_price_per_product']
 TEST_KEY_ID = 'Sandbox'
 TEST_SECRET = 'my secret key'
 API_URL = 'http://test.datawiz.io/api/v1'
@@ -152,15 +152,15 @@ class DataWiz:
         interval: str,{"days","months","weeks","years", default: "days" } 
             залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
         by: str,
-                    {"total_price": Оборот,
+                    {"turnover": Оборот,
                     "qty": Кількість проданих товарів,
                     "stock_qty": Кількість товарів на залишку,
                     "receipts_qty": Кількість чеків,
-                    "margin_price_total": прибуток,
-                    "stock_total_price": собівартість товарів на залишку,
-                    "original_price_total": собівартість проданих товарів,
-                    "original_price_unit": ціна за одиницю товару
-            default: "total_price"}
+                    "profit": прибуток,
+                    "stock_value": собівартість товарів на залишку,
+                    "sold_product_value": собівартість проданих товарів,
+                    "self_price_per_product": ціна за одиницю товару
+            default: "turnover"}
             поле, по якому хочемо отримати результат вибірки.
             
         Returns:
@@ -176,12 +176,12 @@ class DataWiz:
         
         Examples:
             dw = datawiz.DW()
-            dw.get_products_sale(products = [2833024, 2286946],by='total_price',
+            dw.get_products_sale(products = [2833024, 2286946],by='turnover',
 				shops = [305, 306, 318, 321], 
 				date_from = datetime.date(2015, 8, 9), 
 				date_to = datetime.date(2015, 9, 9), 
 				products = [2833024, 2286946], 
-				interval = dw.WEEKS)
+				interval = datawiz.WEEKS)
 			Повернути дані обороту по товарах с id [2833024, 2286946], від 9-8-2015 до 9-9-2015
 			по магазинах  [305, 306, 318, 321], згрупованні по тиднях
 				
