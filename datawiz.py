@@ -23,7 +23,9 @@ YEARS = 'years'
 HEADERS = {'Host': 'test.datawiz.io', 'Accept': 'application/json', 'Date': "Thu, 22 Oct 2015 12:47:05 GMT"}
 SIGNATURE_HEADERS = ['accept', 'date', 'host']
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
-
+GET_CATEGORIES_SALE_URI = 'get_categories_sale'
+GET_PRODUCT = 'products/%s'
+GET_RECEIPT = 'receipts/%s'
 
 
 class APIGetError(Exception):
@@ -130,16 +132,16 @@ class DataWiz:
                           date_to = None,
                           weekday = None,
                           interval = "days",
-                          by = "total_price",):
+                          by = "turnover",):
         """
         Parameters:
         ------------
         products: int,list
-            id товару, або список c id по яких буде робитися вибірка
+            id товару, або список з id по яких буде робитися вибірка
         categories: int,list 
-            id категорії, або список c id по яких буде робитися вибірка
+            id категорії, або список з id по яких буде робитися вибірка
         shops: int,list
-            id магазину, або список c id по яких буде робитися вибірка
+            id магазину, або список з id по яких буде робитися вибірка
         weekday:  int {понеділок - 0, неділя - 6}
             день тижня по якому буде робитися вибірка
         date_from: datetime
@@ -147,7 +149,7 @@ class DataWiz:
         date_to: datetime
             кінцева дата вибірки
             Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
-            Якщо ж заданий тільки один с параметрів то замість іншого буде використанно перший або останій день відповідно
+            Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший або останій день відповідно
                 існування магазину.
         interval: str,{"days","months","weeks","years", default: "days" } 
             залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
@@ -165,7 +167,7 @@ class DataWiz:
             
         Returns:
         ------------
-            повертає об’єкт DataFrame c результатами вибірки
+            повертає об’єкт DataFrame з результатами вибірки
              _______________________________________
                      |product1|product2 |...productN|
             _______________________________________
@@ -179,11 +181,10 @@ class DataWiz:
             dw.get_products_sale(products = [2833024, 2286946],by='turnover',
 				shops = [305, 306, 318, 321], 
 				date_from = datetime.date(2015, 8, 9), 
-				date_to = datetime.date(2015, 9, 9), 
-				products = [2833024, 2286946], 
+				date_to = datetime.date(2015, 9, 9),
 				interval = datawiz.WEEKS)
-			Повернути дані обороту по товарах с id [2833024, 2286946], від 9-8-2015 до 9-9-2015
-			по магазинах  [305, 306, 318, 321], згрупованні по тиднях
+			Повернути дані обороту по товарах з id [2833024, 2286946], від 9-8-2015 до 9-9-2015
+			по магазинах  [305, 306, 318, 321], згрупованні по тижнях
 				
         """
 
@@ -201,3 +202,103 @@ class DataWiz:
         if result:
             return pd.read_json(result)
         return pd.DataFrame()
+
+    @_check_params
+    def get_categories_sale(self, categories=None,
+                            shops = None,
+                            date_from = None,
+                            date_to = None,
+                            weekday = None,
+                            interval = 'days',
+                            by = 'turnover'):
+        """
+        Parameters:
+        ------------
+        categories: int,list
+            id категорії, або список з id по яких буде робитися вибірка
+        shops: int,list
+            id магазину, або список з id по яких буде робитися вибірка
+        weekday:  int {понеділок - 0, неділя - 6}
+            день тижня по якому буде робитися вибірка
+        date_from: datetime
+            початкова дата вибірки
+        date_to: datetime
+            кінцева дата вибірки
+            Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
+            Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший або останій день відповідно
+                існування магазину.
+        interval: str,{"days","months","weeks","years", default: "days" }
+            залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
+        by: str,
+                    {"turnover": Оборот,
+                    "qty": Кількість проданих товарів,
+                    "stock_qty": Кількість товарів на залишку,
+                    "profit": прибуток,
+                    "stock_value": собівартість товарів на залишку,
+                    "sold_product_value": собівартість проданих товарів,
+            default: "turnover"}
+            поле, по якому хочемо отримати результат вибірки.
+
+        Returns:
+        ------------
+            повертає об’єкт DataFrame з результатами вибірки
+             _______________________________________
+                     |category1|category2 |...categoryN|
+            _______________________________________
+             date1   |   by   |    by  |    by    |
+             date2   |   by   |    by  |    by    |
+             ...
+             dateN   |   by   |    by  |    by    |
+
+        Examples:
+            dw = datawiz.DW()
+            dw.get_categories_sale(categories = [50599, 50600],by='turnover',
+				shops = [305, 306, 318, 321],
+				date_from = datetime.date(2015, 8, 9),
+				date_to = datetime.date(2015, 9, 9),
+				interval = datawiz.WEEKS)
+			Повернути дані обороту по категоріях з id [50599, 50600], від 9-8-2015 до 9-9-2015
+			по магазинах  [305, 306, 318, 321], згрупованні по тижнях
+
+        """
+        # Формуємо словник параметрів і отримуємо результат запиту по цих параметрах
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'shops': shops,
+                  'categories':  categories,
+                  'select' : by,
+                  'interval': interval,
+                  'weekday': weekday}
+        result = self._get(GET_CATEGORIES_SALE_URI, params = params)
+        # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
+        if result:
+            return pd.read_json(result)
+        return pd.DataFrame()
+
+    def get_product(self, product_id):
+        """
+        Parameters:
+        ------------
+        product_id: int
+
+        Returns
+        ------------
+        {}
+        """
+        if not isinstance(product_id, int):
+            raise TypeError("Incorrect param type")
+        return self._get(GET_PRODUCT%product_id)
+
+    def get_receipt(self, receipt_id):
+        """
+        Parameters:
+        ------------
+        receipt_id: int
+
+        Returns
+        ------------
+        {}
+        """
+        if not isinstance(receipt_id, int):
+            raise TypeError("Incorrect param type")
+        return self._get(GET_RECEIPT%receipt_id)
