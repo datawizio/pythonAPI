@@ -18,4 +18,4 @@ print dw.get_products_sale(products = [2833024, 2286946],by='stock_qty',
 				date_from = date_from, 
 				date_to = date_to, 
 				products = [2833024, 2286946], 
-				interval = dw.WEEKS)
+				interval = datawiz.WEEKS)
