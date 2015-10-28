@@ -10,7 +10,9 @@ import pandas as pd
 import datetime
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
-MODEL_FIELDS = ['total_price', 'qty', 'receipts_qty', 'stock_qty']
+MODEL_FIELDS = ['total_price', 'qty', 'receipts_qty', 'stock_qty',
+                'margin_price_total', 'stock_total_price'
+                ,'original_price_total', 'original_price_unit']
 TEST_KEY_ID = 'Sandbox'
 TEST_SECRET = 'my secret key'
 API_URL = 'http://test.datawiz.io/api/v1'
@@ -148,8 +150,10 @@ class DataWiz:
             Якщо ж заданий тільки один с параметрів то замість іншого буде використанно перший або останій день відповідно
                 існування магазину.
         interval: str,{"days","months","weeks","years", default: "days" } 
-            залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках. 
-        by: str, {"total_price", "qty", "stock_qty", "receipts_qty" default: "total_price"] 
+            залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
+        by: str, {"total_price", "qty", "stock_qty", "receipts_qty", "margin_price_total",
+                    "stock_total_price", "original_price_total", "original_price_unit"
+                default: "total_price"}
             поле, по якому хочемо отримати результат вибірки.
             
         Returns:
