@@ -32,9 +32,6 @@ class APIGetError(Exception):
     pass
 
 class DW:
-    """"
-    Цей клас дозволяє здійснювати виклики функцій API
-    """
 
 
     def __init__(self, API_KEY = TEST_KEY_ID , API_SECRET = TEST_SECRET):
@@ -285,15 +282,13 @@ class DW:
         Returns
         ------------
             Повертає словник в форматі json
-        {
-            "url": "http://test.datawiz.io/api/v1/products/<product_id>/",
-            "product_id": <product_id>,
+        {   "category_id": <category_id>,
+            "category_name": <category_name>,
             "identifier": <product_identifier>,
-            "name": <product_name>,
-            "category_id": <category_id>,
-            "category_url": "http://test.datawiz.io/api/v1/categories/<category_id>/",
+            "product_id": <product_id>,
+            "product_name": <product_name>,
             "unit_id": <unit_id>,
-            "unit_url": "http://test.datawiz.io/api/v1/units/<unit_id>/"
+            "unit_name": <unit_name>
         }
 
         Examples
