@@ -31,7 +31,7 @@ GET_RECEIPT = 'receipts/%s'
 class APIGetError(Exception):
     pass
 
-class DataWiz:
+class DW:
     """"
     Цей клас дозволяє здійснювати виклики функцій API
     """
@@ -149,8 +149,8 @@ class DataWiz:
         date_to: datetime
             кінцева дата вибірки
             Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
-            Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший або останій день відповідно
-                існування магазину.
+            Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший
+             або останій день відповідно існування магазину.
         interval: str,{"days","months","weeks","years", default: "days" } 
             залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
         by: str,
@@ -225,8 +225,8 @@ class DataWiz:
         date_to: datetime
             кінцева дата вибірки
             Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
-            Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший або останій день відповідно
-                існування магазину.
+            Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший
+             або останій день відповідно існування магазину.
         interval: str,{"days","months","weeks","years", default: "days" }
             залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
         by: str,
@@ -250,7 +250,8 @@ class DataWiz:
              ...
              dateN   |   by   |    by  |    by    |
 
-        Examples:
+        Examples
+        ------------
             dw = datawiz.DW()
             dw.get_categories_sale(categories = [50599, 50600],by='turnover',
 				shops = [305, 306, 318, 321],
@@ -283,22 +284,25 @@ class DataWiz:
 
         Returns
         ------------
-        {}
+            Повертає словник в форматі json
+        {
+            "url": "http://test.datawiz.io/api/v1/products/<product_id>/",
+            "product_id": <product_id>,
+            "identifier": <product_identifier>,
+            "name": <product_name>,
+            "category_id": <category_id>,
+            "category_url": "http://test.datawiz.io/api/v1/categories/<category_id>/",
+            "unit_id": <unit_id>,
+            "unit_url": "http://test.datawiz.io/api/v1/units/<unit_id>/"
+        }
+
+        Examples
+        -----------
+            dw = datawiz.DW()
+            dw.get_product(2280001)
         """
         if not isinstance(product_id, int):
             raise TypeError("Incorrect param type")
         return self._get(GET_PRODUCT%product_id)
 
-    def get_receipt(self, receipt_id):
-        """
-        Parameters:
-        ------------
-        receipt_id: int
 
-        Returns
-        ------------
-        {}
-        """
-        if not isinstance(receipt_id, int):
-            raise TypeError("Incorrect param type")
-        return self._get(GET_RECEIPT%receipt_id)
