@@ -24,10 +24,9 @@ HEADERS = {'Host': 'test.datawiz.io', 'Accept': 'application/json', 'Date': "Thu
 SIGNATURE_HEADERS = ['accept', 'date', 'host']
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
-GET_PRODUCT = 'products/%s'
+GET_PRODUCT = 'core-products/%s'
 GET_RECEIPT = 'core-receipts'
-
-
+GET_CATEGORY = 'core-categories'
 class APIGetError(Exception):
     pass
 
@@ -371,7 +370,7 @@ class DW:
                      "receipt_id": <receipt_id>,
                      "date": <receipt_datetime>,
                      "cartitems": <cartitems>
-                     "total_price": "16.8100"
+                     "total_price": <total_price>
                     },
                      ....
                 ],
@@ -382,6 +381,7 @@ class DW:
                     {
                         "product_id": <product_id>,
                         "product_name": <product_name>,
+                        "category_id": <category_id>,
                         "category_name": <category_name>,
                         "qty": <qty>,
                         "price": <price>
@@ -389,6 +389,7 @@ class DW:
                     {
                         "product_id": <product_id>,
                         "product_name": <product_name>,
+                        "category_id": <category_id>,
                         "category_name": <category_name>,
                         "qty": <qty>,
                         "price": <price>
@@ -412,6 +413,9 @@ class DW:
                 по магазинах [305, 306, 318, 321]
                 за період з 2015, 8, 9  - 2015, 9, 9 в скороченому вигляді
             """
+
+        if not type in ['full', 'short']:
+            raise TypeError("Incorrect param type")
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'shops': shops,
@@ -420,4 +424,38 @@ class DW:
                   'weekday': weekday,
                   'type': type}
         return  self._get(GET_RECEIPT, params = params)
+
+    def get_category(self, category_id = None):
+        """
+            Parameters:
+            ------------
+            category_id: int, default: None
+            id категорії, яку вибираємо. Якщо не заданий, береться категорія найвищого рівня
+
+            Returns
+            ------------
+            {
+                "children": [
+                    {<child_category_id>: <child_category_name>}
+                    ...
+                    ],
+                "category_id": <category_id>,
+                "category_name": <category_name>,
+                "products": [
+                    {<product_id>: <product_name>}
+                    ...
+                    ],
+                "parent_category_id": <parent_category_id>
+                "parent_category_name": <parent_category_name>
+            }
+
+
+            Examples
+            -----------
+            dw = datawiz.DW()
+            dw.get_category(51171)
+        """
+        if not isinstance(category_id, (int, type(None))):
+            raise TypeError("Incorrect param type")
+        return  self._get(GET_CATEGORY, params = {'category':category_id})
 
