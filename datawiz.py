@@ -13,8 +13,8 @@ INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
                 'profit', 'stock_value',
                 'sold_product_value', 'self_price_per_product']
-TEST_KEY_ID = 'Sandbox'
-TEST_SECRET = 'my secret key'
+TEST_KEY_ID = 'test1@mail.com'
+TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
 API_URL = 'http://test.datawiz.io/api/v1'
 DAYS = 'days'
 WEEKS = 'weeks'
@@ -27,6 +27,7 @@ GET_CATEGORIES_SALE_URI = 'get_categories_sale'
 GET_PRODUCT = 'core-products/%s'
 GET_RECEIPT = 'core-receipts'
 GET_CATEGORY = 'core-categories'
+SEARCH = 'search'
 class APIGetError(Exception):
     pass
 
@@ -459,3 +460,39 @@ class DW:
             raise TypeError("Incorrect param type")
         return  self._get(GET_CATEGORY, params = {'category':category_id})
 
+    def search(self, query, by = "product"):
+        """
+            Parameters:
+            ------------
+            query: str
+            Пошуковий запит
+
+            by: str, {"category", "product",
+                        default: "product"}
+            Пошук по категоріям або по продуктам
+
+
+            Returns
+            ------------
+            Повертає список з результатами пошуку
+
+            [
+                { <product_id>: <product_name> }
+                { <product_id>: <product_name> }
+                ...
+
+            ]
+            або
+            [
+                { <category_id>: <category_name> }
+                { <category_id>: <category_name> }
+                ...
+
+            ]
+
+
+        """
+
+        if not by in ["product", "category"]:
+            raise TypeError("Incorrect param type")
+        return self._get(SEARCH, params = {'q': query, 'by': by})['results']
