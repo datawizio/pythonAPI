@@ -25,7 +25,7 @@ SIGNATURE_HEADERS = ['accept', 'date', 'host']
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
 GET_PRODUCT = 'products/%s'
-GET_RECEIPT = 'receipts/%s'
+GET_RECEIPT = 'core-receipts'
 
 
 class APIGetError(Exception):
@@ -300,4 +300,124 @@ class DW:
             raise TypeError("Incorrect param type")
         return self._get(GET_PRODUCT%product_id)
 
+    def get_receipt(self, receipt_id):
+        """
+        Parameters:
+        ------------
+        receipt_id: int
+
+        Returns
+        ------------
+            Повертає словник в форматі json
+            {
+                "date": <receipt_date>,
+                    "cartitems": [{
+                                "product_id": <product_id>,
+                                "product_name": <product_name>,
+                                "price": <price>,
+                                "qty": <qty>,
+                                "category_id": <category_id>,
+                                "category_name": <category_name>
+                                }],
+                "total_price": <total_price>,
+                "receipt_id": <receipt_id>
+            }
+
+        Examples
+        -----------
+            dw = datawiz.DW()
+            dw.get_receipt(19623631)
+        """
+
+        if not isinstance(receipt_id, int):
+            raise TypeError("Incorrect param type")
+        return self._get('%s/%s'%(GET_RECEIPT, receipt_id))
+
+    @_check_params
+    def get_receipts(self, categories=None,
+                            products=None,
+                            shops = None,
+                            date_from = None,
+                            date_to = None,
+                            weekday = None,
+                            type = 'full'):
+        """
+            Parameters:
+            ------------
+            products: int,list
+                id товару, або список з id по яких буде робитися вибірка
+            categories: int,list
+                id категорії, або список з id по яких буде робитися вибірка
+            shops: int,list
+                id магазину, або список з id по яких буде робитися вибірка
+            weekday:  int {понеділок - 0, неділя - 6}
+                день тижня по якому буде робитися вибірка
+            date_from: datetime
+                початкова дата вибірки
+            date_to: datetime
+                кінцева дата вибірки
+                Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
+                Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший
+                 або останій день відповідно існування магазину.
+            type: str, {'full', 'short'}
+                Тип виводу продуктів в чеку
+                default: 'full'
+
+            Returns:
+            ------------
+                Повертає список з чеками
+                [
+                    {
+                     "receipt_id": <receipt_id>,
+                     "date": <receipt_datetime>,
+                     "cartitems": <cartitems>
+                     "total_price": "16.8100"
+                    },
+                     ....
+                ],
+                де cartitems залежить від аргумента type
+                Для type = "full" :
+
+                [
+                    {
+                        "product_id": <product_id>,
+                        "product_name": <product_name>,
+                        "category_name": <category_name>,
+                        "qty": <qty>,
+                        "price": <price>
+                    },
+                    {
+                        "product_id": <product_id>,
+                        "product_name": <product_name>,
+                        "category_name": <category_name>,
+                        "qty": <qty>,
+                        "price": <price>
+                    }
+                    .....
+                ]
+
+                для type = "short"
+                    [<product1_id>, <product2_id>, ... , <productN_id>]
+
+
+            Examples
+            -------------------
+            dw = datawiz.DW()
+            dw.get_receipts(categories = [50599, 50600],
+                    shops = [305, 306, 318, 321],
+                    date_from = datetime.date(2015, 8, 9),
+                    date_to = datetime.date(2015, 9, 9),
+                    type = "short")
+                Отримати всі чеки які включають продукти, що належать категоріям [50599, 50600],
+                по магазинах [305, 306, 318, 321]
+                за період з 2015, 8, 9  - 2015, 9, 9 в скороченому вигляді
+            """
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'shops': shops,
+                  'categories':  categories,
+                  'products': products,
+                  'weekday': weekday,
+                  'type': type}
+        return  self._get(GET_RECEIPT, params = params)
 
