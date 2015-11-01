@@ -28,6 +28,9 @@ GET_PRODUCT = 'core-products/%s'
 GET_RECEIPT = 'core-receipts'
 GET_CATEGORY = 'core-categories'
 SEARCH = 'search'
+CLIENT = 'client'
+SHOPS = 'core-shops'
+
 class APIGetError(Exception):
     pass
 
@@ -496,3 +499,44 @@ class DW:
         if not by in ["product", "category"]:
             raise TypeError("Incorrect param type")
         return self._get(SEARCH, params = {'q': query, 'by': by})['results']
+
+    def get_shops(self):
+        """
+        Returns
+        ----------
+        Повертає список магазинів клієнта
+        [ {
+            '<shop_id>': {
+                            "name": <shop_name>,
+                            "area": <shop_area>,
+                            "longitude": <shop_longitude>,
+                            "latitude": <shop_latitude>,
+                            "address": <shop_address>,
+                            "open_date": <shop_open_date>
+
+            }
+            ...
+        } ]
+
+
+        """
+
+        return self._get(SHOPS)['results']
+
+    def get_client_info(self):
+        """
+        Returns
+        ----------
+        Повертає інформацію про клієнта
+        {
+            "shops": [
+                        {"<shop_id>": "<shop_name>"},
+                        ...
+                     ],
+            "name": <client_name>,
+            "date_from": <date_from>,
+            "date_to": <date_to>
+        }
+        """
+
+        return self._get(CLIENT)
