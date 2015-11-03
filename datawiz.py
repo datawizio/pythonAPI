@@ -123,6 +123,23 @@ class DW:
         if response.text:
             return response.json()
         return {}
+    def _deserialize(self, obj, fields = {}):
+        """
+        Функція десеріалізує об’єкт, приводячи поля в fields до рідних типів Python
+        """
+        datetime_format = '%Y-%m-%d %H:%M:%S'
+        date_format = '%Y-%m-%d"
+        date_fields = ['date', 'date_from', 'date_to']
+        for key, value in obj.iteritems():
+            if key in date_fields and obj[key]:
+                obj[key] = datetime.datetime.strptime(value, date_format)
+            elif key in fields:
+                try:
+                    obj[key] = fields[key](obj[key])
+                except TypeError:
+                    pass
+        return obj
+
 
     @_check_params
     def get_products_sale(self, categories=None,
@@ -131,8 +148,9 @@ class DW:
                           date_from = None,
                           date_to = None,
                           weekday = None,
+                          sum = False,
                           interval = "days",
-                          by = "turnover",):
+                          by = "turnover"):
         """
         Parameters:
         ------------
@@ -196,7 +214,8 @@ class DW:
                   'categories':  categories,
                   'select' : by,
                   'interval': interval,
-                  'weekday': weekday}
+                  'weekday': weekday,
+                  'sum': sum}
         result = self._get(GET_PRODUCTS_SALE_URI, params = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
@@ -334,7 +353,13 @@ class DW:
 
         if not isinstance(receipt_id, int):
             raise TypeError("Incorrect param type")
-        return self._get('%s/%s'%(GET_RECEIPT, receipt_id))
+        receipt =  self._get('%s/%s'%(GET_RECEIPT, receipt_id))
+        if receipt:
+            cartitems = [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in receipt['cartitems']]
+            receipt = self._deserialize(receipt, fields = {"turnover": float})
+            receipt['cartitems'] = cartitems
+        return receipt
+
 
     @_check_params
     def get_receipts(self, categories=None,
@@ -427,8 +452,16 @@ class DW:
                   'products': products,
                   'weekday': weekday,
                   'type': type}
-        return  self._get(GET_RECEIPT, params = params)
-
+        #Отримуємо список чеків
+        receipts = self._get(GET_RECEIPT, params = params)
+        result = []
+        #Приводимо строкові значення в словнику json до рідних типів python
+        for receipt in receipts:
+            cartitems =  [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in receipt['cartitems']]
+            receipt = self._deserialize(receipt, fields = {"turnover": float})
+            receipt['cartitems'] = cartitems
+            result.append(receipt)
+        return result
     def get_category(self, category_id = None):
         """
             Parameters:
@@ -521,7 +554,10 @@ class DW:
 
         """
 
-        return self._get(SHOPS)['results']
+        shops = self._get(SHOPS)['results']
+        for shop_id, shop in shops.iteritems():
+            shops[shop_id] = self._deserialize(shop, fields = {"longitude": float, "latitude": float})
+        return shops
 
     def get_client_info(self):
         """
@@ -539,4 +575,4 @@ class DW:
         }
         """
 
-        return self._get(CLIENT)
+        return  self._deserialize(self._get(CLIENT))
