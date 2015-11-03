@@ -128,7 +128,7 @@ class DW:
         Функція десеріалізує об’єкт, приводячи поля в fields до рідних типів Python
         """
         datetime_format = '%Y-%m-%d %H:%M:%S'
-        date_format = '%Y-%m-%d"
+        date_format = '%Y-%m-%d'
         date_fields = ['date', 'date_from', 'date_to']
         for key, value in obj.iteritems():
             if key in date_fields and obj[key]:
