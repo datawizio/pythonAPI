@@ -132,7 +132,7 @@ class DW:
         date_fields = ['date', 'date_from', 'date_to']
         for key, value in obj.iteritems():
             if key in date_fields and obj[key]:
-                obj[key] = datetime.datetime.strptime(value, date_format)
+                obj[key] = datetime.datetime.strptime(value, datetime_format)
             elif key in fields:
                 try:
                     obj[key] = fields[key](obj[key])
