@@ -100,6 +100,8 @@ class DW:
                 'price_to':
                       {'types': int,
                        'call': lambda x: x},
+                'hours': {'types': list,
+                            'call': id_list},
                 }
         return wrapper
 
@@ -627,13 +629,14 @@ class DW:
                   date_to = None,
                   shops = None,
                   hours = None,
-                  weekdays = None,
                   product_id = None,
                   category_id = None,
                   price_from = 0,
                   price_to = 10000,
                   pair_by = 'category',
+                  week_day = 'all',
                   map = 1,
+                  show ='id',
                   ):
         """
         Parameters:
@@ -646,8 +649,8 @@ class DW:
         id магазину або список магазинів
         hours: list [<0...23>, <0...23>, ...]
         Години
-        weekdays: list
-        Дні тижня
+        week_day: int, str, default: "all"
+        День тижня
         product_id: int
         Id продукта
         category_id: int
@@ -658,8 +661,15 @@ class DW:
 
         pair_by: str, ["category", "product"], default: "category"
 
-        map: int, default: 1
+        map: int, default: 10
+        Returns
+        ------------
+        Повертає об’єкт DataFrame з результатами вибірки
 
+        Examples
+        ------------
+        dw = datawiz.DW()
+        dw.get_pairs(date_from = datetime.date(2015, 10, 1), date_to = datetime.date(2015, 10, 3), show = 'both', category_id = 50601)
         """
         params = {'date_from': date_from,
                   'date_to': date_to,
@@ -667,13 +677,17 @@ class DW:
                   'price_to': price_to,
                   'shops': shops,
                   'hours': hours,
-                  'weekdays': weekdays,
+                  'weekday': week_day,
                   'pair_by': pair_by,
                   'product_id': product_id,
                   'category_id': category_id,
-                  'map': map}
-        result = self._get(PAIRS, params = params)['results']
-        return result
+                  'map': map,
+                  'show': show
+                  }
+        results = self._get(PAIRS, params = params)['results']
+        if results:
+            return pd.read_json(results)
+        return pd.DataFrame()
         # if result:
         #     return pd.read_json(result)
         # return pd.DataFrame()
@@ -723,7 +737,9 @@ class DW:
             ...
         }
         або
-        {'<product_name>': <product_id>}
+        {'<product_name>': <product_id>
+        ...
+        }
         """
 
         splitter = '%dsf^45%'
