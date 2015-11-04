@@ -30,6 +30,8 @@ GET_CATEGORY = 'core-categories'
 SEARCH = 'search'
 CLIENT = 'client'
 SHOPS = 'core-shops'
+PAIRS = 'pairs'
+UTILS = 'utils'
 
 class APIGetError(Exception):
     pass
@@ -86,7 +88,18 @@ class DW:
                        'call': lambda x: x if x in MODEL_FIELDS else None},
                 'weekday':
                       {'types': int,
-                       'call': lambda x: x if x in range(7) else None}
+                       'call': lambda x: x if x in range(7) else None},
+                'weekdays':
+                      {'types': list,
+                       'call': id_list},
+                'id_list': {'types': list,
+                            'call': id_list},
+                'price_from':
+                      {'types': int,
+                       'call': lambda x: x},
+                'price_to':
+                      {'types': int,
+                       'call': lambda x: x},
                 }
         return wrapper
 
@@ -123,6 +136,39 @@ class DW:
         if response.text:
             return response.json()
         return {}
+    def _post(self, resource_url, params={}):
+        """
+        Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
+        передаючи серверу параметри із params
+        Повертає словник в форматі json
+        """
+
+        auth = HTTPSignatureAuth(key_id = self.API_KEY,
+                    secret = self.API_SECRET,
+                    algorithm = 'hmac-sha256',
+                    headers = SIGNATURE_HEADERS)
+
+        # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
+        try:
+            response = requests.post('%s/%s/'%(API_URL, resource_url), params = params, auth = auth, headers = HEADERS)
+        except RequestException, error:
+            raise APIGetError("Error, while loading data. %s"%error)
+
+        # Якщо сервер повертає помилку, виводимо її
+        # Формат відповіді сервера {'detail':'error message'}
+        if response.status_code != requests.codes.OK:
+            try:
+                error = response.json().get('detail', '')
+                raise APIGetError('Error, while loading data. %s'%error)
+            #Якщо сервер не повернув помилку, як об’єкт json
+            except ValueError:
+                raise APIGetError('%s %s'%(response.status_code, response.reason))
+        # Інакше повертаємо результат
+        if response.text:
+            return response.json()
+        return {}
+
+
     def _deserialize(self, obj, fields = {}):
         """
         Функція десеріалізує об’єкт, приводячи поля в fields до рідних типів Python
@@ -148,14 +194,13 @@ class DW:
                           date_from = None,
                           date_to = None,
                           weekday = None,
-                          sum = False,
                           interval = "days",
                           by = "turnover"):
         """
         Parameters:
         ------------
         products: int,list
-            id товару, або список з id по яких буде робитися вибірка
+            id товару, або список з id по яких буде робитися вибірка.
         categories: int,list 
             id категорії, або список з id по яких буде робитися вибірка
         shops: int,list
@@ -214,8 +259,8 @@ class DW:
                   'categories':  categories,
                   'select' : by,
                   'interval': interval,
-                  'weekday': weekday,
-                  'sum': sum}
+                  'weekday': weekday
+                  }
         result = self._get(GET_PRODUCTS_SALE_URI, params = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
@@ -576,3 +621,120 @@ class DW:
         """
 
         return  self._deserialize(self._get(CLIENT))
+    @_check_params
+    def get_pairs(self,
+                  date_from = None,
+                  date_to = None,
+                  shops = None,
+                  hours = None,
+                  weekdays = None,
+                  product_id = None,
+                  category_id = None,
+                  price_from = 0,
+                  price_to = 10000,
+                  pair_by = 'category',
+                  map = 1,
+                  ):
+        """
+        Parameters:
+        ------------
+        date_from: datetime
+        початкова дата вибірки
+        date_to: datetime
+        кінцева дата вибірки
+        shops: int, list
+        id магазину або список магазинів
+        hours: list [<0...23>, <0...23>, ...]
+        Години
+        weekdays: list
+        Дні тижня
+        product_id: int
+        Id продукта
+        category_id: int
+        id категорії
+        price_from: int, defaul: 0
+
+        price_to: int, default: 10000
+
+        pair_by: str, ["category", "product"], default: "category"
+
+        map: int, default: 1
+
+        """
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'price_from': price_from,
+                  'price_to': price_to,
+                  'shops': shops,
+                  'hours': hours,
+                  'weekdays': weekdays,
+                  'pair_by': pair_by,
+                  'product_id': product_id,
+                  'category_id': category_id,
+                  'map': map}
+        result = self._get(PAIRS, params = params)['results']
+        return result
+        # if result:
+        #     return pd.read_json(result)
+        # return pd.DataFrame()
+    def id2name(self, id_list, typ = 'category'):
+        """
+        Params
+        ------------
+        id_list: list [<int>, <int>, <int>, ...]
+        Список id
+        typ: str ['category', 'products'], default: "category"
+        Тип id (для категорій, чи продуктів)
+
+        Returns
+        ------------
+        Повертає словник, де ключами є id, а значеннями імена
+        {'<category_id>': <category_name>
+            ...
+        }
+        або
+        {'<product_id>': <product_name>}
+        """
+        #Перевіряємо аргументи на правильність
+        if not typ in ['category', 'product']:
+            raise TypeError("Incorrect param type")
+        if not isinstance(id_list, list):
+            raise TypeError("Incorrect param type")
+        #Формуємо параметри і отримуємо результат запиту по цим параметрам
+        id_list = ','.join([str(x) for x in id_list])
+        params = {'id_list': id_list,
+                  'id_type': typ,
+                  'function': 'id2name'}
+        return dict(self._post(UTILS, params = params)['results'])
+
+    def name2id(self, name_list, typ = 'category'):
+        """
+        Params
+        ------------
+        name_list: list [<int>, <int>, <int>, ...]
+        Список імен
+        typ: str ['category', 'products'], default: "category"
+        Тип імен (для категорій, чи продуктів)
+
+        Returns
+        ------------
+        Повертає словник, де ключами є імена, а значеннями id
+        {'<category_name>': <category_id>
+            ...
+        }
+        або
+        {'<product_name>': <product_id>}
+        """
+
+        splitter = '%dsf^45%'
+        #Перевіряємо аргументи на правильність
+        if not typ in ['category', 'product']:
+            raise TypeError("Incorrect param type")
+        if not isinstance(name_list, list):
+            raise TypeError("Incorrect param type")
+        #Формуємо параметри і отримуємо результат запиту по цим параметрам
+        name_list = splitter.join(name_list)
+        params = {'name_list': name_list,
+                  'id_type': typ,
+                  'function': 'name2id'}
+        return dict(self._post(UTILS, params = params)['results'])
