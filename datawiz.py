@@ -197,7 +197,8 @@ class DW:
                           date_to = None,
                           weekday = None,
                           interval = "days",
-                          by = "turnover"):
+                          by = "turnover",
+                          show = "name"):
         """
         Parameters:
         ------------
@@ -229,7 +230,13 @@ class DW:
                     "self_price_per_product": ціна за одиницю товару
             default: "turnover"}
             поле, по якому хочемо отримати результат вибірки.
-            
+
+        show: str,
+                    {"name": <category_name> для назв колонок,
+                     "id": <category_id> для назв колонок,
+                     "both": <category_id>_<category_name> для назв колонок,
+                     default: "name"
+
         Returns:
         ------------
             повертає об’єкт DataFrame з результатами вибірки
@@ -261,7 +268,8 @@ class DW:
                   'categories':  categories,
                   'select' : by,
                   'interval': interval,
-                  'weekday': weekday
+                  'weekday': weekday,
+                  'show': show
                   }
         result = self._get(GET_PRODUCTS_SALE_URI, params = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
@@ -276,7 +284,8 @@ class DW:
                             date_to = None,
                             weekday = None,
                             interval = 'days',
-                            by = 'turnover'):
+                            by = 'turnover',
+                            show = 'name'):
         """
         Parameters:
         ------------
@@ -304,7 +313,11 @@ class DW:
                     "sold_product_value": собівартість проданих товарів,
             default: "turnover"}
             поле, по якому хочемо отримати результат вибірки.
-
+        show: str,
+                    {"name": <category_name> для назв колонок,
+                     "id": <category_id> для назв колонок,
+                     "both": <category_id>_<category_name> для назв колонок,
+                     default: "name"
         Returns:
         ------------
             повертає об’єкт DataFrame з результатами вибірки
@@ -335,7 +348,8 @@ class DW:
                   'categories':  categories,
                   'select' : by,
                   'interval': interval,
-                  'weekday': weekday}
+                  'weekday': weekday,
+                  'show': show}
         result = self._get(GET_CATEGORIES_SALE_URI, params = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
@@ -578,7 +592,7 @@ class DW:
 
         if not by in ["product", "category"]:
             raise TypeError("Incorrect param type")
-        return self._get(SEARCH, params = {'q': query, 'by': by})['results']
+        return dict(self._get(SEARCH, params = {'q': query, 'by': by})['results'])
 
     def get_shops(self):
         """
@@ -622,7 +636,7 @@ class DW:
         }
         """
 
-        return  self._deserialize(self._get(CLIENT))
+        return  self._deserialize(self._get(CLIENT), fields = {'shops': dict})
     @_check_params
     def get_pairs(self,
                   date_from = None,
@@ -661,7 +675,9 @@ class DW:
 
         pair_by: str, ["category", "product"], default: "category"
 
-        map: int, default: 10
+        map: int, default: 1
+        show: str, ['id', 'name', 'both'], default: 'id'
+
         Returns
         ------------
         Повертає об’єкт DataFrame з результатами вибірки
@@ -669,7 +685,10 @@ class DW:
         Examples
         ------------
         dw = datawiz.DW()
-        dw.get_pairs(date_from = datetime.date(2015, 10, 1), date_to = datetime.date(2015, 10, 3), show = 'both', category_id = 50601)
+        dw.get_pairs(date_from = datetime.date(2015, 10, 1),
+                    date_to = datetime.date(2015, 10, 3),
+                    category_id = 50601,
+                    show = 'both')
         """
         params = {'date_from': date_from,
                   'date_to': date_to,
