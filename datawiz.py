@@ -61,7 +61,7 @@ class DW:
                     # Викликаємо задану в шаблоні функцію для обробки даних
                    kwargs[kwarg] = params[kwarg]['call'](kwargs[kwarg])
                 elif kwarg in params and not isinstance(kwargs[kwarg], params[kwarg]['types']):
-                    raise TypeError('Incorrect param type for <%s> '%i)
+                    raise TypeError('Incorrect param type for <%s> '%kwarg)
             return func(self, **kwargs)
         splitter = ','
         # Шаблони для змінних - в types допустимі типи, в call функція обробки данних змінної
@@ -138,6 +138,7 @@ class DW:
         if response.text:
             return response.json()
         return {}
+
     def _post(self, resource_url, params={}):
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
@@ -250,13 +251,15 @@ class DW:
         
         Examples:
             dw = datawiz.DW()
-            dw.get_products_sale(products = [2833024, 2286946],by='turnover',
+            dw.get_products_sale(products = [2833024, 2286946, 'sum'],by='turnover',
 				shops = [305, 306, 318, 321], 
 				date_from = datetime.date(2015, 8, 9), 
 				date_to = datetime.date(2015, 9, 9),
 				interval = datawiz.WEEKS)
 			Повернути дані обороту по товарах з id [2833024, 2286946], від 9-8-2015 до 9-9-2015
 			по магазинах  [305, 306, 318, 321], згрупованні по тижнях
+			Передавши параметр "sum" останнім елементом списку, отримаємо
+			додаткову колонку з сумою відповідного показника
 				
         """
 
@@ -332,13 +335,15 @@ class DW:
         Examples
         ------------
             dw = datawiz.DW()
-            dw.get_categories_sale(categories = [50599, 50600],by='turnover',
+            dw.get_categories_sale(categories = [50599, 50600, "sum"],by='turnover',
 				shops = [305, 306, 318, 321],
 				date_from = datetime.date(2015, 8, 9),
 				date_to = datetime.date(2015, 9, 9),
 				interval = datawiz.WEEKS)
 			Повернути дані обороту по категоріях з id [50599, 50600], від 9-8-2015 до 9-9-2015
 			по магазинах  [305, 306, 318, 321], згрупованні по тижнях
+			Передавши параметр "sum" останнім елементом списку, отримаємо
+			додаткову колонку з сумою відповідного показника
 
         """
         # Формуємо словник параметрів і отримуємо результат запиту по цих параметрах
@@ -414,7 +419,7 @@ class DW:
 
         if not isinstance(receipt_id, int):
             raise TypeError("Incorrect param type")
-        receipt =  self._get('%s/%s'%(GET_RECEIPT, receipt_id))
+        receipt =  self._get(GET_RECEIPT, params = {'receipt_id': receipt_id})
         if receipt:
             cartitems = [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in receipt['cartitems']]
             receipt = self._deserialize(receipt, fields = {"turnover": float})
@@ -423,7 +428,7 @@ class DW:
 
 
     @_check_params
-    def get_receipts(self, categories=None,
+    def get_receipts(self,
                             products=None,
                             shops = None,
                             date_from = None,
@@ -435,8 +440,6 @@ class DW:
             ------------
             products: int,list
                 id товару, або список з id по яких буде робитися вибірка
-            categories: int,list
-                id категорії, або список з id по яких буде робитися вибірка
             shops: int,list
                 id магазину, або список з id по яких буде робитися вибірка
             weekday:  int {понеділок - 0, неділя - 6}
@@ -509,16 +512,17 @@ class DW:
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'shops': shops,
-                  'categories':  categories,
                   'products': products,
                   'weekday': weekday,
                   'type': type}
         #Отримуємо список чеків
-        receipts = self._get(GET_RECEIPT, params = params)
+        receipts = self._get(GET_RECEIPT, params = params)['results']
         result = []
         #Приводимо строкові значення в словнику json до рідних типів python
         for receipt in receipts:
-            cartitems =  [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in receipt['cartitems']]
+            cartitems = receipt['cartitems']
+            if type == 'full':
+                cartitems =  [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in cartitems]
             receipt = self._deserialize(receipt, fields = {"turnover": float})
             receipt['cartitems'] = cartitems
             result.append(receipt)
@@ -615,7 +619,7 @@ class DW:
 
         """
 
-        shops = self._get(SHOPS)['results']
+        shops = dict(self._get(SHOPS)['results'])
         for shop_id, shop in shops.iteritems():
             shops[shop_id] = self._deserialize(shop, fields = {"longitude": float, "latitude": float})
         return shops
@@ -716,7 +720,7 @@ class DW:
         ------------
         id_list: list [<int>, <int>, <int>, ...]
         Список id
-        typ: str ['category', 'products'], default: "category"
+        typ: str {'category', 'products'}, default: "category"
         Тип id (для категорій, чи продуктів)
 
         Returns
