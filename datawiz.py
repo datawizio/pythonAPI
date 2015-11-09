@@ -1,27 +1,19 @@
 #!/usr/bin/env python
 #coding:utf-8
-# REQUIRES requests, httpsig, PyCrypto, pandas
-import requests
-from requests.exceptions import RequestException
-from functools import wraps
-from httpsig.requests_auth import HTTPSignatureAuth
-import urllib
-import pandas as pd
+
 import datetime
+import pandas as pd
+from datawiz_auth import Auth
+from functools import wraps
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
                 'profit', 'stock_value',
                 'sold_product_value', 'self_price_per_product']
-TEST_KEY_ID = 'test1@mail.com'
-TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
-API_URL = 'http://test.datawiz.io/api/v1'
 DAYS = 'days'
 WEEKS = 'weeks'
 MONTHS = 'months'
 YEARS = 'years'
-HEADERS = {'Host': 'test.datawiz.io', 'Accept': 'application/json', 'Date': "Thu, 22 Oct 2015 12:47:05 GMT"}
-SIGNATURE_HEADERS = ['accept', 'date', 'host']
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
 GET_PRODUCT = 'core-products/%s'
@@ -33,15 +25,8 @@ SHOPS = 'core-shops'
 PAIRS = 'pairs'
 UTILS = 'utils'
 
-class APIGetError(Exception):
-    pass
 
-class DW:
-
-
-    def __init__(self, API_KEY = TEST_KEY_ID , API_SECRET = TEST_SECRET):
-        # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
-        self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
+class DW(Auth):
 
     def _check_params(func):
         """
@@ -68,111 +53,44 @@ class DW:
         params = {'shops':
                       {'types':(int, list),
                        'call': id_list},
-                'categories':
+                  'categories':
                       {'types':(int, list),
                        'call': id_list},
-                 'products':
+                  'products':
                       {'types':(int, list),
                        'call': id_list},
-                'date_from':
+                  'date_from':
                       {'types': datetime.date,
                        'call': lambda x: x},
-                'date_to':
+                  'date_to':
                       {'types': datetime.date,
                       'call': lambda x: x},
-                'interval':
+                  'interval':
                       {'types': str,
                        'call': lambda x: x if x in INTERVALS else None},
-                'by':
+                  'by':
                       {'types': str,
                        'call': lambda x: x if x in MODEL_FIELDS else None},
-                'weekday':
+                  'weekday':
                       {'types': int,
                        'call': lambda x: x if x in range(7) else None},
-                'weekdays':
+                  'weekdays':
                       {'types': list,
                        'call': id_list},
-                'id_list': {'types': list,
+                  'id_list': {'types': list,
                             'call': id_list},
-                'price_from':
+                  'price_from':
                       {'types': int,
                        'call': lambda x: x},
-                'price_to':
+                  'price_to':
                       {'types': int,
                        'call': lambda x: x},
-                'hours': {'types': list,
+                  'hours': {'types': list,
                             'call': id_list},
                 }
         return wrapper
 
-
-    def _get(self, resource_url, params={}):
-        """
-        Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
-        передаючи серверу параметри із params
-        Повертає словник в форматі json
-        """
-
-        auth = HTTPSignatureAuth(key_id = self.API_KEY,
-                    secret = self.API_SECRET,
-                    algorithm = 'hmac-sha256',
-                    headers = SIGNATURE_HEADERS)
-
-        # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
-        # Особливість urlencode - кодує значення somevar = None в строку "somevar=None", тому замінюємо всі None на пусті значення
-        try:
-            response = requests.get('%s/%s/?%s'%(API_URL, resource_url, urllib.urlencode(params).replace('None', '')), auth = auth, headers = HEADERS)
-        except RequestException, error:
-            raise APIGetError("Error, while loading data. %s"%error)
-
-        # Якщо сервер повертає помилку, виводимо її
-        # Формат відповіді сервера {'detail':'error message'}
-        if response.status_code != requests.codes.OK:
-            try:
-                error = response.json().get('detail', '')
-                raise APIGetError('Error, while loading data. %s'%error)
-            #Якщо сервер не повернув помилку, як об’єкт json
-            except ValueError:
-                raise APIGetError('%s %s'%(response.status_code, response.reason))
-        # Інакше повертаємо результат
-        if response.text:
-            return response.json()
-        return {}
-
-    def _post(self, resource_url, params={}):
-        """
-        Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
-        передаючи серверу параметри із params
-        Повертає словник в форматі json
-        """
-
-        auth = HTTPSignatureAuth(key_id = self.API_KEY,
-                    secret = self.API_SECRET,
-                    algorithm = 'hmac-sha256',
-                    headers = SIGNATURE_HEADERS)
-
-        # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
-        try:
-            response = requests.post('%s/%s/'%(API_URL, resource_url), params = params, auth = auth, headers = HEADERS)
-        except RequestException, error:
-            raise APIGetError("Error, while loading data. %s"%error)
-
-        # Якщо сервер повертає помилку, виводимо її
-        # Формат відповіді сервера {'detail':'error message'}
-        if response.status_code != requests.codes.OK:
-            try:
-                error = response.json().get('detail', '')
-                raise APIGetError('Error, while loading data. %s'%error)
-            #Якщо сервер не повернув помилку, як об’єкт json
-            except ValueError:
-                raise APIGetError('%s %s'%(response.status_code, response.reason))
-        # Інакше повертаємо результат
-        if response.text:
-            return response.json()
-        return {}
-
-
-    def _deserialize(self, obj, fields = {}):
+    def _deserialize(self, obj, fields={}):
         """
         Функція десеріалізує об’єкт, приводячи поля в fields до рідних типів Python
         """
@@ -408,7 +326,8 @@ class DW:
                                 "category_name": <category_name>
                                 }],
                 "total_price": <total_price>,
-                "receipt_id": <receipt_id>
+                "receipt_id": <receipt_id>,
+                "loyalty_id": <loyalty_id>
             }
 
         Examples
@@ -618,8 +537,9 @@ class DW:
 
 
         """
-
+        #отримуємо дані
         shops = dict(self._get(SHOPS)['results'])
+        #Приводимо їх до рідних типів Python
         for shop_id, shop in shops.iteritems():
             shops[shop_id] = self._deserialize(shop, fields = {"longitude": float, "latitude": float})
         return shops
@@ -641,6 +561,7 @@ class DW:
         """
 
         return  self._deserialize(self._get(CLIENT), fields = {'shops': dict})
+
     @_check_params
     def get_pairs(self,
                   date_from = None,
@@ -660,31 +581,50 @@ class DW:
         Parameters:
         ------------
         date_from: datetime
-        початкова дата вибірки
+        Початкова дата періоду побудови пар
         date_to: datetime
-        кінцева дата вибірки
+        Кінцева дата періоду побудови пар
         shops: int, list
         id магазину або список магазинів
         hours: list [<0...23>, <0...23>, ...]
         Години
-        week_day: int, str, default: "all"
+        week_day:  int<0...6>, default: "all"
         День тижня
         product_id: int
-        Id продукта
+        id продукта
         category_id: int
         id категорії
         price_from: int, defaul: 0
-
+        Ціна від
         price_to: int, default: 10000
-
+        Ціна до
         pair_by: str, ["category", "product"], default: "category"
-
+        Побудова пар для категорій чи продуктів
         map: int, default: 1
+        на якому рівні рахувати супутні товари
         show: str, ['id', 'name', 'both'], default: 'id'
+        Показувати id, ім’я, або обидва параметри
 
         Returns
         ------------
         Повертає об’єкт DataFrame з результатами вибірки
+        Для параметра show = "id"
+
+            ------------------------------------------
+            0name | 1name |...| Nname | <data columns> |
+            -------------------------------------------
+            <id> | <id>  |...| <id>  |     <data>     |
+
+            ...
+        Для параметра show = "both"
+
+            ------------------------------------------
+            0name | 0name_name |...| Nname | Nname_name | <data_columns> |
+            -------------------------------------------
+            <id> |    <name>  |...| <id>  |  <name>    |   <data>       |
+
+        При pair_by = "category", функція будує пари для категорій (або категорії, указаної в category_id),
+        pair_by = "product" - для продуктів (або продукта, указаного в product_id).
 
         Examples
         ------------
@@ -693,6 +633,9 @@ class DW:
                     date_to = datetime.date(2015, 10, 3),
                     category_id = 50601,
                     show = 'both')
+        Побудувати пари за період 2015, 10, 1 - 2015, 10, 3 для категорії 50601,
+        показати id та ім’я категорій
+
         """
         params = {'date_from': date_from,
                   'date_to': date_to,
