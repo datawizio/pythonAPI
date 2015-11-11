@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #coding: utf-8
 from datawiz_auth import Auth, APIGetError, APIUploadError
-import pandas as pd
+import pandas
 import os
 
 RECEIPTS_API_URI = 'receipts'
@@ -93,6 +93,7 @@ class Up_DW(Auth):
                         data = self._create_request_object(receipts_buff, columns = columns)
                         try:
                             self._post(RECEIPTS_API_URI, data = data)
+                            receipts_buff = []
                             print 'Chunk %s uploaded'%chunk_number
                         except APIUploadError:
                             #self._upload_data_recursively(data)
