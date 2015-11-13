@@ -4,18 +4,29 @@ from datawiz_auth import Auth, APIGetError, APIUploadError
 import pandas
 import os
 import logging
+#Потрібно перезавантажити модуль, щоб лог працював в ipython notebook
+#Це звязано з тим, що logging.basicConfig звертається до того ж
+# StreamHandler, що і notebook
+reload(logging)
 import json
 
 
 RECEIPTS_API_URI = 'receipts'
 CATEGORIES_API_URL = 'categories'
 PRODUCTS_API_URL = 'products'
+UNITS_API_URL = 'units'
+CASHIERS_API_URL = 'cashiers'
+TERMINALS_API_URL = 'terminals'
+LOYALTY_API_URL = 'loyalty'
+SHOPS_API_URL = 'shops'
+
 RECEIPTS_CHUNK_SIZE = 1000
 DEFAULT_CHUNK_SIZE = 100
+SEPARATOR = ';'
 
 logging.basicConfig(
     format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.DEBUG, file = 'log.txt')
+    level = logging.DEBUG, file = '/home/victor/log.txt')
 
 class Up_DW(Auth):
 
@@ -56,15 +67,20 @@ class Up_DW(Auth):
                          resource_url,
                          data,
                          columns=None,
-                         skiprows=1,
-                         splitter=';'
+                         subcolumns=None,
+                         skip_rows=1,
+                         splitter=SEPARATOR,
+                         columns_to_identify = None
                          ):
 
         """
         Функція відправляє дані на сервер, попередньо розбивши на чанки
         columns: list ['column1', 'column2', ..., 'columnN']
         Імена колонок об’єкта DataFrame
-
+        subcolumns: list ['column1', 'column2', ..., 'columnN']
+        Імена колонок, які ми відправляємо серверу
+        skiprows: int, default: 1
+        Кількість рядків файлу, які необхідно пропустити
         """
 
         chunk_num = 1
@@ -86,14 +102,24 @@ class Up_DW(Auth):
                                      chunksize = DEFAULT_CHUNK_SIZE,
                                      names = columns,
                                      sep = splitter,
-                                     skiprows = skiprows)
+                                     skiprows = skip_rows,
+                                     encoding = 'cp1251')
             logging.info('Data upload started')
             for chunk in reader:
-
+                if subcolumns:
+                    chunk = chunk[subcolumns]
+                # Замінює всі значення NaN в таблиці на None
+                # Потрібно для того, щоб передавати в словнику json значення null замість nan
+                chunk = chunk.where((pandas.notnull(chunk)), None)
+                #Колонки, по яких будемо ідентифікувати дублікати
+                #За замовчуванням - всі, крім першої
+                if columns_to_identify is None:
+                    columns_to_identify = list(chunk.columns)[1:]
+                chunk = chunk.drop_duplicates(columns_to_identify)
                 try:
                     # Відправляємо на сервер
                     self._post(resource_url, data = chunk.to_dict('records'))
-
+                    logging.info('Data chunk #%s uploaded'%chunk_num)
                 except APIUploadError, error:
                     #self._upload_data_recursively
                     logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
@@ -103,7 +129,7 @@ class Up_DW(Auth):
 
     #TODO: Розбиває чанк на менші частини і відправляє їх на сервер.
     # Якщо відправка провалюється,розбиває чанк на ще менші частини
-    def _upload_data_recursively(self, resource_url, data, delimeter = 10):
+    def _upload_data_recursively(self, resource_url, data, chunk_size, delimeter = 10):
         pass
 
     def upload_receipts(self, receipts, splitter = ';', skiplines = 0):
@@ -160,7 +186,7 @@ class Up_DW(Auth):
                 try:
                     self._post(RECEIPTS_API_URI, data=chunk)
                     logging.info('Receipts uploaded')
-                except APIUploadError:
+                except APIUploadError, error:
                     #self._upload_data_recursively
                     logging.error('Receipts chunk #%s upload failed\n%s'%(chunk_num, error))
                 chunk_num += 1
@@ -177,6 +203,9 @@ class Up_DW(Auth):
             last_chunk = None
             logging.info('Receipts upload started')
             for chunk in reader:
+                # Замінює всі значення NaN в таблиці на None
+                # Потрібно для того, щоб передавати в словнику json значення null замість nan
+                chunk = chunk.where((pandas.notnull(chunk)), None)
                 if last_chunk is not None:
                     last_order = list(last_chunk.tail(1)['order_id'])[0]
                     receipt_chunk = chunk[chunk['order_id'] == last_order]
@@ -194,7 +223,6 @@ class Up_DW(Auth):
                         self._post(RECEIPTS_API_URI, data = data)
                         logging.info('Receipts chunk #%s uploaded'%chunk_num)
                     except APIUploadError:
-                        print 'err'
                         #self._upload_data_recursively
                         logging.error('Receipts chunk #%s upload failed'%chunk_num)
                     chunk_num += 1
@@ -230,11 +258,12 @@ class Up_DW(Auth):
                               categories,
                               columns = ['category_id',
                                          'name',
-                                         'parent_category'
+                                         'parent_id'
                                          ])
         return True
 
-    def upload_products(self, products):
+    def upload_products(self, products, columns = None, skip_rows = 1):
+
         """
         Функція відправляє серверу дані по товарам
         Приймає список об’єктів товарів в форматі
@@ -254,22 +283,34 @@ class Up_DW(Auth):
 
         або шлях до файлу *.csv
         """
-        self._send_chunk_data(PRODUCTS_API_URL,
-                              products,
-                              columns = ['product_id',
-                                         'code',
-                                         'article',
-                                         'name',
-                                         'category_id',
-                                         'unit_id'
-                                         'l',
-                                         'w',
-                                         'h',
-                                         'rw',
-                                         'review',
-                                         'photo'
-                                         ])
-        return True
+
+        if columns is None:
+            columns = [
+                        'product_id',
+                        'barcode',
+                        'article',
+                        'name',
+                        'category_id',
+                        'unit_id',
+                        'length',
+                        'width',
+                        'height',
+                        'review',
+                        'photo'
+                        ]
+        subcolumns = ['product_id',
+                      'barcode',
+                      'article',
+                      'name',
+                      'category_id',
+                      'unit_id']
+        subcolumns = list(set(subcolumns) & set(columns))
+        return self._send_chunk_data(PRODUCTS_API_URL,
+                                     products,
+                                     columns = columns,
+                                     subcolumns = subcolumns,
+                                     skip_rows = skip_rows)
+
 
     def upload_units(self, units):
 
@@ -288,7 +329,7 @@ class Up_DW(Auth):
         або шлях до файлу *.csv
         """
 
-        self._send_chunk_data(UNITS_API_URL,
+        return self._send_chunk_data(UNITS_API_URL,
                               units,
                               columns=['unit_id', 'name'])
 
@@ -302,16 +343,8 @@ class Up_DW(Auth):
             {
                    'loyalty_id': <loyalty_id>,
                    'cardno': <cardno>,
-                   'shop_id': <shop_id>,
-                   'registration_date': <registration_date>,
                    'client_name': <client_name>,
-                   'client_lastname':<client_lastname>,
-                   'is_male': <is_male>,
-                   'client_birthday': <client_birthday>,
-                   'adress': <adress>,
-                   'email': <email>
-
-
+                   'client_birthday': <client_birthday>
 
             }
             ...
@@ -319,4 +352,124 @@ class Up_DW(Auth):
 
         або шлях до файлу *.csv
         """
-        return self._send_chunk_data(CLIENTS_API_URL, clients, columns = [])
+        # Якщо переданий список об’єктів чека
+        chunk_num = 1
+        if isinstance(receipts, list):
+            # Розбиваємо список на частини і відправляємо на сервер
+            for chunk in self._split_list_to_chunks(receipts,
+                                                    chunk_size=DEFAULT_CHUNK_SIZE):
+                try:
+                    self._post(LOYALTY_API_URL, data=chunk)
+                    logging.info('Clients chunk #%s uploaded'%chunk_num)
+                except APIUploadError, error:
+                    #self._upload_data_recursively
+                    logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
+                chunk_num += 1
+
+        elif isinstance(receipts, str) and os.path.isfile(receipts):
+
+            columns = ['loyalty_id',
+                       'cardno',
+                       'shop_id',
+                       'registration_date',
+                       'first_name',
+                       'last_name',
+                       'sex',
+                       'client_birthday',
+                       'address',
+                       'email'
+                       ]
+            subcolumns = ['loyalty_id',
+                          'cardno',
+                          'client_name',
+                          'client_birthday',
+                          ]
+            chunk_num = 1
+            # Читаємо файл чанками розміром DEFAULT_CHUNK_SIZE
+            reader = pandas.read_csv(receipts,
+                                     header = None,
+                                     chunksize = DEFAULT_CHUNK_SIZE,
+                                     names = columns,
+                                     sep = SEPARATOR,
+                                     skiprows = 1)
+            for chunk in reader:
+                chunk['client_name'] = chunk['first_name'] + ' ' + chunk['last_name']
+                chunk = chunk[subcolumns]
+                # Замінює всі значення NaN в таблиці на None
+                # Потрібно, щоб передавати в словнику json значення null замість nan
+                chunk = chunk.where((pandas.notnull(chunk)), None)
+                logging.info('Data upload started')
+                try:
+                    self._post(LOYALTY_API_URL, data = chunk.to_dict('records'))
+                    logging.info('Data chunk #%s uploaded'%chunk_num)
+                except APIUploadError, error:
+                    #self._upload_data_recursively
+                    logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
+                chunk_num += 1
+        else:
+            raise TypeError('Invalid arguments')
+        return True
+
+    def upload_cashiers(self, cashiers):
+        """
+        Функція відправляє серверу дані по касирах
+        Приймає список об’єктів касира в форматі
+
+        [
+            {
+                'cashier_id': <cashier_id>,
+                'name': <name>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+        """
+        return self._send_chunk_data(CASHIERS_API_URL, cashiers, columns=['cashier_id', 'name'])
+
+    def upload_terminals(self, terminals):
+        """
+        Функція відправляє серверу дані по терміналах
+        Приймає список об’єктів термінала в форматі
+
+        [
+            {
+                'terminal_id': <terminal_id>,
+                'shop_id': <shop_id>,
+                'name': <name>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+        """
+
+        return self._send_chunk_data(TERMINALS_API_URL, terminals, columns=['terminal_id', 'shop_id', 'name'])
+
+    def upload_shops(self, shops):
+        """
+        Функція відправляє серверу дані по магазинах
+        Приймає список об’єктів магазина в форматі
+
+        [
+            {
+                'shop_id': <shop_id>,
+                'name': <name>,
+                'address': <address>,
+                'open_date': <open_date>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+        """
+        return self._send_chunk_data(SHOPS_API_URL, shops, columns=['shop_id',
+                                                                    'name',
+                                                                    'address',
+                                                                    'open_date'])
+
+
+
