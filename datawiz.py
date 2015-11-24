@@ -68,6 +68,9 @@ class DW(Auth):
                   'interval':
                       {'types': str,
                        'call': lambda x: x if x in INTERVALS else None},
+                  'loyalty':
+                      {'types': (int, list),
+                       'call': id_list},
                   'by':
                       {'types': str,
                        'call': lambda x: x if x in MODEL_FIELDS else None},
@@ -350,10 +353,13 @@ class DW(Auth):
     def get_receipts(self,
                             products=None,
                             shops = None,
+                            loyalty = None,
                             date_from = None,
                             date_to = None,
                             weekday = None,
-                            type = 'full'):
+                            type = 'full',
+                            only_loyalty = False
+                     ):
         """
             Parameters:
             ------------
@@ -373,6 +379,10 @@ class DW(Auth):
             type: str, {'full', 'short'}
                 Тип виводу продуктів в чеку
                 default: 'full'
+            loyalty: int, list
+                id клієнта або список клієнтів програми лояльності
+            only_loyalty: bool, default: False
+                Якщо True, повертає тільки чеки клієнтів програми лояльності
 
             Returns:
             ------------
@@ -433,7 +443,9 @@ class DW(Auth):
                   'shops': shops,
                   'products': products,
                   'weekday': weekday,
-                  'type': type}
+                  'type': type,
+                  'loyalty':loyalty,
+                  'only_loyalty':only_loyalty}
         #Отримуємо список чеків
         receipts = self._get(GET_RECEIPT, params = params)['results']
         result = []
@@ -691,7 +703,7 @@ class DW(Auth):
         """
         Params
         ------------
-        name_list: list [<int>, <int>, <int>, ...]
+        name_list: list [<str>, <str>, <str>, ...]
         Список імен
         typ: str ['category', 'products'], default: "category"
         Тип імен (для категорій, чи продуктів)
