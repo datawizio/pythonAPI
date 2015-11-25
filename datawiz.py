@@ -693,11 +693,11 @@ class DW(Auth):
         if not isinstance(id_list, list):
             raise TypeError("Incorrect param type")
         #Формуємо параметри і отримуємо результат запиту по цим параметрам
-        id_list = ','.join([str(x) for x in id_list])
+        # id_list = ','.join([str(x) for x in id_list])
         params = {'id_list': id_list,
                   'id_type': typ,
                   'function': 'id2name'}
-        return dict(self._post(UTILS, params = params)['results'])
+        return dict(self._post(UTILS, data = params)['results'])
 
     def name2id(self, name_list, typ = 'category'):
         """
@@ -720,15 +720,49 @@ class DW(Auth):
         }
         """
 
-        splitter = '%dsf^45%'
+        # splitter = '%dsf^45%'
         #Перевіряємо аргументи на правильність
         if not typ in ['category', 'product']:
             raise TypeError("Incorrect param type")
         if not isinstance(name_list, list):
             raise TypeError("Incorrect param type")
         #Формуємо параметри і отримуємо результат запиту по цим параметрам
-        name_list = splitter.join(name_list)
         params = {'name_list': name_list,
                   'id_type': typ,
                   'function': 'name2id'}
-        return dict(self._post(UTILS, params = params)['results'])
+        return dict(self._post(UTILS, data = params)['results'])
+
+
+    def get_parent(self, categories, level = 1):
+        """
+        Params
+        ---------------
+        categories: int, list
+            id категорії або список id
+        level: int
+            рівень батьківської категорії
+
+
+        Returns
+        ---------------
+        Повертає словник, де ключами є id категорії,
+        а значеннями id  батьківської категорії
+
+            {
+                <category_id>: <parent_category_id>
+                ...
+            }
+
+        Examples
+        --------------
+        dw = datawiz.DW()
+        dw.get_parent([3445, 4123, 96660], level = 2)
+
+        Отримати батьківські категорії 2-го рівня для категорій з id 3445, 4123, 96660
+        """
+
+        params = {'categories': categories,
+                  'level': level,
+                  'function': 'get_parent'}
+        return dict(self._post(UTILS, data = params)['results'])
+
