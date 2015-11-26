@@ -19,6 +19,7 @@ GET_CATEGORIES_SALE_URI = 'get_categories_sale'
 GET_PRODUCT = 'core-products/%s'
 GET_RECEIPT = 'core-receipts'
 GET_CATEGORY = 'core-categories'
+GET_LOYALTY_CUSTOMER = 'get_loyalty_customer'
 SEARCH = 'search'
 CLIENT = 'client'
 SHOPS = 'core-shops'
@@ -34,8 +35,8 @@ class DW(Auth):
         """
         def id_list(var):
             if isinstance(var, list):
-                return splitter.join([str(x) for x in var])
-            return var
+                return var#splitter.join([str(x) for x in var])
+            return [var]
         @wraps(func)
         def wrapper(self, **kwargs):
 
@@ -61,10 +62,10 @@ class DW(Auth):
                        'call': id_list},
                   'date_from':
                       {'types': datetime.date,
-                       'call': lambda x: x},
+                       'call': lambda x: str(x)},
                   'date_to':
                       {'types': datetime.date,
-                      'call': lambda x: x},
+                      'call': lambda x: str(x)},
                   'interval':
                       {'types': str,
                        'call': lambda x: x if x in INTERVALS else None},
@@ -90,6 +91,12 @@ class DW(Auth):
                        'call': lambda x: x},
                   'hours': {'types': list,
                             'call': id_list},
+                  'cardno': {'types': (str, list),
+                             'call': id_list},
+                  'name': {'types': (str, list),
+                           'call': id_list},
+                  'loyalty_id': {'types': (int, list),
+                                 'call': id_list}
                 }
         return wrapper
 
@@ -195,7 +202,7 @@ class DW(Auth):
                   'weekday': weekday,
                   'show': show
                   }
-        result = self._get(GET_PRODUCTS_SALE_URI, params = params)
+        result = self._get(GET_PRODUCTS_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             return pd.read_json(result)
@@ -267,6 +274,7 @@ class DW(Auth):
 			додаткову колонку з сумою відповідного показника
 
         """
+
         # Формуємо словник параметрів і отримуємо результат запиту по цих параметрах
         params = {'date_from': date_from,
                   'date_to': date_to,
@@ -353,10 +361,12 @@ class DW(Auth):
     def get_receipts(self,
                             products=None,
                             shops = None,
+                            categories = None,
                             loyalty = None,
                             date_from = None,
                             date_to = None,
                             weekday = None,
+                            hours = None,
                             type = 'full',
                             only_loyalty = False
                      ):
@@ -369,6 +379,8 @@ class DW(Auth):
                 id магазину, або список з id по яких буде робитися вибірка
             weekday:  int {понеділок - 0, неділя - 6}
                 день тижня по якому буде робитися вибірка
+            hours: int, list
+                година або список годин, по яких буде робитися вибірка
             date_from: datetime
                 початкова дата вибірки
             date_to: datetime
@@ -441,13 +453,15 @@ class DW(Auth):
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'shops': shops,
+                  'categories': categories,
                   'products': products,
                   'weekday': weekday,
+                  'hours': hours,
                   'type': type,
                   'loyalty':loyalty,
                   'only_loyalty':only_loyalty}
         #Отримуємо список чеків
-        receipts = self._get(GET_RECEIPT, params = params)['results']
+        receipts = self._get(GET_RECEIPT, data = params)['results']
         result = []
         #Приводимо строкові значення в словнику json до рідних типів python
         for receipt in receipts:
@@ -490,7 +504,7 @@ class DW(Auth):
         """
         if not isinstance(category_id, (int, type(None))):
             raise TypeError("Incorrect param type")
-        return  self._get(GET_CATEGORY, params = {'category':category_id})
+        return self._get(GET_CATEGORY, params = {'category':category_id})
 
     def search(self, query, by = "product"):
         """
@@ -572,7 +586,7 @@ class DW(Auth):
         }
         """
 
-        return  self._deserialize(self._get(CLIENT), fields = {'shops': dict})
+        return self._deserialize(self._get(CLIENT), fields = {'shops': dict})
 
     @_check_params
     def get_pairs(self,
@@ -662,7 +676,7 @@ class DW(Auth):
                   'map': map,
                   'show': show
                   }
-        results = self._get(PAIRS, params = params)['results']
+        results = self._get(PAIRS, data = params)['results']
         if results:
             return pd.read_json(results)
         return pd.DataFrame()
@@ -766,3 +780,66 @@ class DW(Auth):
                   'function': 'get_parent'}
         return dict(self._post(UTILS, data = params)['results'])
 
+    @_check_params
+    def get_loyalty_customer(self,
+                             date_from = None,
+                             date_to = None,
+                             shops = None,
+                             name = None,
+                             loyalty_id = None,
+                             cardno = None):
+        """
+        Params
+        ------------
+        date_from: date
+            початкова дата вибірки
+        date_to: date
+            кінцева дата вибірки
+        Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
+        Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший
+        або останій день відповідно існування магазину.
+        shops: int, list
+            id магазину або список id
+        name: str, list
+            ім’я клієнта або список імен
+        loyalty_id: int, list
+            id клієнта або список id
+        cardno: int, list
+            номер карти клієнта або список номерів
+
+        Returns
+        -----------
+
+        Повертає об’єкт DataFrame з результатами вибірки
+        -----------------------------------------------------------------------------------------------------
+                       |   last_visit  |  spend  |     number_visits     |   shop_name1    | shop_name2 ...  |
+                        -------------------------------------------------------------------------------------
+        |<loyalty_id > | <last_visit>  | <spend> | <number_visits_total> | <number_visits> | <number_visits> |
+        |<loyalty_id>  | <last_visit>  | <spend> | <number_visits_total> | <number_visits> | <number_visits> |
+        ...
+
+        Examples
+        -----------
+        dw = datawiz.DW()
+        dw.get_loyalty_customer(date_from = datetime.date(2015, 7, 8),
+                                date_to = datetime.date(2015, 8, 8),
+                                shops = [1234, 4545])
+
+        Отримати дані по клієнтах програми лояльності для магазинів 1234, 4545
+        за період 8-7-2015 - 8-8-2015
+        """
+
+
+
+        params = {
+            'date_from': date_from,
+            'date_to': date_to,
+            'shops': shops,
+            'name': name,
+            'loyalty_id': loyalty_id,
+            'cardno': cardno
+        }
+        result =  self._get(GET_LOYALTY_CUSTOMER, data = params)['results']
+        if not result:
+            return pd.DataFrame()
+        return pd.read_json(result)
