@@ -284,7 +284,7 @@ class DW(Auth):
                   'interval': interval,
                   'weekday': weekday,
                   'show': show}
-        result = self._get(GET_CATEGORIES_SALE_URI, params = params)
+        result = self._get(GET_CATEGORIES_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             return pd.read_json(result)
@@ -305,7 +305,8 @@ class DW(Auth):
             "product_id": <product_id>,
             "product_name": <product_name>,
             "unit_id": <unit_id>,
-            "unit_name": <unit_name>
+            "unit_name": <unit_name>,
+            "barcode": <barcode>
         }
 
         Examples
