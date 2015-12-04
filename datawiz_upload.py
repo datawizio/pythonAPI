@@ -21,10 +21,10 @@ TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
 SHOPS_API_URL = 'shops'
 STOCKS_API_URL = 'stock'
-PRICES_API_URL = 'prices'
+PRICE_API_URL = 'date-prices'
 
 RECEIPTS_CHUNK_SIZE = 1000
-DEFAULT_CHUNK_SIZE = 1000
+DEFAULT_CHUNK_SIZE = 10
 SEPARATOR = ';'
 
 logging.basicConfig(
@@ -696,5 +696,15 @@ class Up_DW(Auth):
                                      subcolumns = subcolumns,
                                      splitter = splitter)
 
+    def upload_to_service(self, email, cache=True):
+        """
+        Функція викликає на сервері
+
+
+        """
+
+        params = {'function': 'upload_to_service',
+                  'email':email}
+        return self._post('utils', data=params)['results']
 
 
