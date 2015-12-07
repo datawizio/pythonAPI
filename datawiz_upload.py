@@ -712,7 +712,7 @@ class Up_DW(Auth):
               email,
               date_from=None,
               date_to = None,
-              date_list = None
+              date_list = None,
               shops = None,
               ):
         """

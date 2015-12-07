@@ -801,11 +801,14 @@ class DW(Auth):
 
         if not type in ['category', 'product']:
             raise TypeError("Incorrect param type")
+        if isinstance(categories, int):
+            categories = [categories]
+
         params = {'categories': categories,
                   'level': level,
                   'function': 'get_parent',
                   'id_type': type}
-        return dict(self._post(UTILS, data = params)['results'])
+        return self._post(UTILS, data = params)['results']
 
     @_check_params
     def get_loyalty_customer(self,
