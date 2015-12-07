@@ -696,10 +696,11 @@ class Up_DW(Auth):
                                      subcolumns = subcolumns,
                                      splitter = splitter)
 
-    def upload_to_service(self, email, cache=True):
+    def upload_to_service(self, email):
         """
-        Функція викликає на сервері
-
+        Функція запускає на сервері процес завантаження і кешування
+        даних. Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
 
         """
 
@@ -707,4 +708,30 @@ class Up_DW(Auth):
                   'email':email}
         return self._post('utils', data=params)['results']
 
+    def cache(self,
+              email,
+              date_from=None,
+              date_to = None,
+              date_list = None
+              shops = None,
+              ):
+        """
+        Функція запускає на сервері процес кешування
+        даних. Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
+        """
+
+        params = {'function': 'cache_func',
+                  'email':email}
+        return self._post('utils', data=params)['results']
+
+    def clear_receipts(self, email):
+        """
+        Функція викликає на сервері процес видалення чеків.
+         Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
+        """
+        params = {'function': 'clear_receipts',
+                  'email':email}
+        return self._post('utils', data=params)['results']
 

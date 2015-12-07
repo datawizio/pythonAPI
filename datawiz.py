@@ -16,7 +16,7 @@ MONTHS = 'months'
 YEARS = 'years'
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
-GET_PRODUCT = 'core-products/%s'
+GET_PRODUCT = 'core-products'
 GET_RECEIPT = 'core-receipts'
 GET_CATEGORY = 'core-categories'
 GET_LOYALTY_CUSTOMER = 'get_loyalty_customer'
@@ -242,6 +242,7 @@ class DW(Auth):
                     "profit": прибуток,
                     "stock_value": собівартість товарів на залишку,
                     "sold_product_value": собівартість проданих товарів,
+                    "receipts_qty": кількість чеків
             default: "turnover"}
             поле, по якому хочемо отримати результат вибірки.
         show: str,
@@ -290,15 +291,20 @@ class DW(Auth):
             return pd.read_json(result)
         return pd.DataFrame()
 
-    def get_product(self, product_id):
+
+    @_check_params
+    def get_product(self, products=None):
         """
         Parameters:
         ------------
-        product_id: int
+        products: int, list, default: None
+        Id товару, або список id
 
         Returns
         ------------
-            Повертає словник в форматі json
+        Повертає товар, або список товарів в форматі
+
+
         {   "category_id": <category_id>,
             "category_name": <category_name>,
             "identifier": <product_identifier>,
@@ -312,11 +318,11 @@ class DW(Auth):
         Examples
         -----------
             dw = datawiz.DW()
-            dw.get_product(2280001)
+            dw.get_product(products=2280001)
         """
-        if not isinstance(product_id, int):
-            raise TypeError("Incorrect param type")
-        return self._get(GET_PRODUCT%product_id)
+        if products is not None and len(products) == 1:
+            return self._get('%s/%s'%(GET_PRODUCT, products[0]))
+        return self._get(GET_PRODUCT, data = {'products': products})
 
     def get_receipt(self, receipt_id):
         """
@@ -389,7 +395,7 @@ class DW(Auth):
                 Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
                 Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший
                  або останій день відповідно існування магазину.
-            type: str, {'full', 'short'}
+            type: str, {'full', 'short', 'info'}
                 Тип виводу продуктів в чеку
                 default: 'full'
             loyalty: int, list
@@ -435,6 +441,15 @@ class DW(Auth):
                 для type = "short"
                     [<product1_id>, <product2_id>, ... , <productN_id>]
 
+                для type = "info" функція повертає результат в вигляді об’єкта DataFrame
+
+                ------------------------------------------------------------------
+                |    date   |     loyalty_id   |    receipt_id    |   turnover   |
+                ------------------------------------------------------------------
+                |   <date> |    <loyalty_id>  |    <receipt_id>  |   <turnover> |
+
+
+
 
             Examples
             -------------------
@@ -449,7 +464,7 @@ class DW(Auth):
                 за період з 2015, 8, 9  - 2015, 9, 9 в скороченому вигляді
             """
 
-        if not type in ['full', 'short']:
+        if not type in ['full', 'short', 'info']:
             raise TypeError("Incorrect param type")
         params = {'date_from': date_from,
                   'date_to': date_to,
@@ -461,10 +476,12 @@ class DW(Auth):
                   'type': type,
                   'loyalty':loyalty,
                   'only_loyalty':only_loyalty}
-        #Отримуємо список чеків
+        # Отримуємо список чеків
         receipts = self._get(GET_RECEIPT, data = params)['results']
         result = []
-        #Приводимо строкові значення в словнику json до рідних типів python
+        if type == 'info' and receipts:
+            return pd.DataFrame.from_records(receipts)
+        # Приводимо строкові значення в словнику json до рідних типів python
         for receipt in receipts:
             cartitems = receipt['cartitems']
             if type == 'full':
@@ -473,15 +490,21 @@ class DW(Auth):
             receipt['cartitems'] = cartitems
             result.append(receipt)
         return result
-    def get_category(self, category_id = None):
+
+    @_check_params
+    def get_category(self, categories = None):
         """
             Parameters:
             ------------
-            category_id: int, default: None
-            id категорії, яку вибираємо. Якщо не заданий, береться категорія найвищого рівня
+            category: int, list, default: None
+            id категорії, яку вибираємо, або список id.
+            Якщо не заданий, береться категорія найвищого рівня
+
 
             Returns
             ------------
+            Повертає об’єкт категорії або список об’єктів виду:
+
             {
                 "children": [
                     {<child_category_id>: <child_category_name>}
@@ -501,11 +524,11 @@ class DW(Auth):
             Examples
             -----------
             dw = datawiz.DW()
-            dw.get_category(51171)
+            dw.get_category(categories = [51171, 51172])
         """
-        if not isinstance(category_id, (int, type(None))):
-            raise TypeError("Incorrect param type")
-        return self._get(GET_CATEGORY, params = {'category':category_id})
+        if categories is not None and len(categories) == 1:
+            return self._get('%s/%s'%(GET_CATEGORY, categories[0]))
+        return self._get(GET_CATEGORY, data = {'categories': categories})
 
     def search(self, query, by = "product"):
         """
@@ -736,19 +759,19 @@ class DW(Auth):
         """
 
         # splitter = '%dsf^45%'
-        #Перевіряємо аргументи на правильність
+        # Перевіряємо аргументи на правильність
         if not typ in ['category', 'product']:
             raise TypeError("Incorrect param type")
         if not isinstance(name_list, list):
             raise TypeError("Incorrect param type")
-        #Формуємо параметри і отримуємо результат запиту по цим параметрам
+        # Формуємо параметри і отримуємо результат запиту по цим параметрам
         params = {'name_list': name_list,
                   'id_type': typ,
                   'function': 'name2id'}
         return dict(self._post(UTILS, data = params)['results'])
 
 
-    def get_parent(self, categories, level = 1):
+    def get_parent(self, categories, level = 1, type='category'):
         """
         Params
         ---------------
@@ -756,8 +779,8 @@ class DW(Auth):
             id категорії або список id
         level: int
             рівень батьківської категорії
-
-
+        type: str, {"category", "product"}, default: "category"
+            Тип id (для категорій чи продуктів)
         Returns
         ---------------
         Повертає словник, де ключами є id категорії,
@@ -776,9 +799,12 @@ class DW(Auth):
         Отримати батьківські категорії 2-го рівня для категорій з id 3445, 4123, 96660
         """
 
+        if not type in ['category', 'product']:
+            raise TypeError("Incorrect param type")
         params = {'categories': categories,
                   'level': level,
-                  'function': 'get_parent'}
+                  'function': 'get_parent',
+                  'id_type': type}
         return dict(self._post(UTILS, data = params)['results'])
 
     @_check_params
@@ -788,7 +814,8 @@ class DW(Auth):
                              shops = None,
                              name = None,
                              loyalty_id = None,
-                             cardno = None):
+                             cardno = None,
+                             type = 'loyalty_id'):
         """
         Params
         ------------
@@ -807,7 +834,8 @@ class DW(Auth):
             id клієнта або список id
         cardno: int, list
             номер карти клієнта або список номерів
-
+        type: str, {'loyalty_id', 'cardno', 'name'} , default: "loyalty_id"
+            Вид інформації в першій колонці
         Returns
         -----------
 
@@ -830,7 +858,8 @@ class DW(Auth):
         за період 8-7-2015 - 8-8-2015
         """
 
-
+        if not type in ['loyalty_id', 'name', 'cardno']:
+            raise TypeError("Incorrect param type")
 
         params = {
             'date_from': date_from,
@@ -838,9 +867,13 @@ class DW(Auth):
             'shops': shops,
             'name': name,
             'loyalty_id': loyalty_id,
-            'cardno': cardno
+            'cardno': cardno,
+            'type': type
         }
-        result =  self._get(GET_LOYALTY_CUSTOMER, data = params)['results']
+        result = self._get(GET_LOYALTY_CUSTOMER, data = params)['results']
         if not result:
             return pd.DataFrame()
         return pd.read_json(result)
+
+    def get_tasks(self):
+        pass
