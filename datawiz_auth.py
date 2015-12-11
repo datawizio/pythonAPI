@@ -58,7 +58,7 @@ class Auth:
 
         # Якщо сервер повертає помилку, виводимо її
         # Формат відповіді сервера {'detail':'error message'}
-        if response.status_code != requests.codes.OK:
+        if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json().get('detail', '')
                 raise APIGetError('Error, while loading data. %s'%error)

@@ -20,11 +20,12 @@ CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
 SHOPS_API_URL = 'shops'
-STOCKS_API_URL = 'stock'
+# STOCKS_API_URL = 'stock'
 PRICE_API_URL = 'date-prices'
+STOCK_API_URL = 'product-inventory'
 
 RECEIPTS_CHUNK_SIZE = 1000
-DEFAULT_CHUNK_SIZE = 10
+DEFAULT_CHUNK_SIZE = 1000
 SEPARATOR = ';'
 
 logging.basicConfig(
@@ -292,7 +293,9 @@ class Up_DW(Auth):
         return True
 
     @_check_columns(['category_id', 'name', 'parent_id'])
-    def upload_categories(self, categories, columns = None, subcolumns = None, splitter=SEPARATOR):
+    def upload_categories(self, categories,
+                          columns = None, subcolumns = None,
+                          splitter=SEPARATOR):
         """
         Функція відправляє на сервер дані категорій
         Приймає список об’єктів категорії в форматі
@@ -327,7 +330,7 @@ class Up_DW(Auth):
                               splitter = splitter)
         return True
 
-    @_check_columns(['product_id', 'barcode', 'article', 'name', 'category_id', 'unit_id'])
+    @_check_columns(['product_id', 'article', 'name', 'category_id', 'unit_id'])
     def upload_products(self, products, columns = None, subcolumns = None, splitter = SEPARATOR):
 
         """
@@ -527,7 +530,7 @@ class Up_DW(Auth):
         return True
 
     @_check_columns(['cashier_id', 'name'])
-    def upload_cashiers(self, cashiers, columns = None, splitter = SEPARATOR):
+    def upload_cashiers(self, cashiers, columns = None, subcolumns = None, splitter = SEPARATOR):
         """
         Функція відправляє серверу дані по касирах
         Приймає список об’єктів касира в форматі
@@ -553,6 +556,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(CASHIERS_API_URL,
                                      cashiers,
                                      columns=columns,
+                                     subcolumns = subcolumns,
                                      splitter = splitter)
 
     @_check_columns(['terminal_id', 'shop_id', 'name'])
@@ -696,11 +700,23 @@ class Up_DW(Auth):
                                      subcolumns = subcolumns,
                                      splitter = splitter)
 
-    def upload_to_service(self, email):
+    def upload_to_service(self, email, cache=True):
         """
         Функція запускає на сервері процес завантаження і кешування
         даних. Після його завершення користувач отримає повідомлення
         на вказану адресу електронної пошти
+
+        Parameters
+        --------------
+        email: str
+        Електронна адреса
+        cache: bool, default = True
+        Вказує, чи необхідно запускати процес кешування
+
+        Examples
+        -------------
+            dw_up = Up_DW(API_KEY='my_private_api_key', API_SECRET = 'my_secret')
+            dw_up.upload_to_service('my_email@mail.com', cache=False)
 
         """
 
@@ -721,8 +737,12 @@ class Up_DW(Auth):
         на вказану адресу електронної пошти
         """
 
-        params = {'function': 'cache_func',
-                  'email':email}
+        params = {'function': 'cache_data',
+                  'email':email,
+                  'date_from': date_from,
+                  'date_to': date_to,
+                  'date_list': date_list,
+                  'shops': shops}
         return self._post('utils', data=params)['results']
 
     def clear_receipts(self, email):
@@ -735,3 +755,21 @@ class Up_DW(Auth):
                   'email':email}
         return self._post('utils', data=params)['results']
 
+    def register_user(self, name, email, password):
+        """
+        Функція реєструє нового користувача і повертає створену пару API_KEY:API_SECRET
+
+        Returns
+        -----------------
+        Повертає словник
+        {
+          'API_KEY': <API_KEY>,
+          'API_SECRET': <API_SECRET>
+
+        }
+
+        """
+        params = {'name':name,
+                  'email': email,
+                  'password': password}
+        return self._get('register_user', data=params)['detail']
