@@ -97,7 +97,7 @@ clients = [{"loyalty_id": "CLIENT-IDENTIFIER-1",
              "is_male": False}]
 dw.upload_loyalty_client_info(clients)
 
-#Завантажуємо дані чеків
+#Завантаження даних чеків.
 cartitems = [{"order_no":"1",
               "product_id": "PRODUCT-IDENTIFIER-1",
               "base_price": 5.0,
@@ -126,7 +126,7 @@ receipts = [{'order_id': 'RECEIPT-IDENTIFIER-1',
 }]
 dw.upload_receipts(receipts)
 
-#Завантажуємо дані цін на товари
+#Завантаження даних цін на товари.
 prices = [{"shop_id": "SHOP-IDENTIFIER-1",
            "product_id": "PRODUCT-IDENTIFIER-1",
            "date": "2015-6-22",
@@ -139,7 +139,7 @@ prices = [{"shop_id": "SHOP-IDENTIFIER-1",
           "price": 3.0}]
 dw.upload_price(prices)
 
-#Завантажуємо дані залишів товарів
+#Завантаження даних залишків товарів.
 inventory = [{"shop_id": "SHOP-IDENTIFIER-1",
     	     "product_id": "PRODUCT-IDENTIFIER-1",
              "date": "2015-6-22",
@@ -148,7 +148,7 @@ inventory = [{"shop_id": "SHOP-IDENTIFIER-1",
              "stock_total_price": 122.5}]
 dw.upload_inventory(inventory)
 
-#Запускаємо процес індексації даних.
+#Запуск процесу індексації даних.
 dw.upload_to_service('<email>')
 ```
 Після завершення кешування на вказану вами електронну адресу буде надіслано листа. Процес кешування може тривати до кількох годин.
