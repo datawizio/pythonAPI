@@ -21,7 +21,7 @@ print user['API_KEY'], ':' , user['API_SECRET']
 
 ###Крок 3 - завантаження даних.
 ```
-Ініціалізація екземпляру класу.
+#Ініціалізація екземпляру класу.
 dw = Up_DW(API_KEY=user['API_KEY'], API_SECRET = user['API_SECRET'])
 
 #Завантаження даних одиниць виміру.
@@ -51,7 +51,7 @@ categories = [{"category_id": "CATEGORY-IDENTIFIER-1",
               "parent_id": "CATEGORY-IDENTIFIER-1"}]
 dw.upload_categories(categories)
 
-#Завантажуємо дані терміналів
+#Завантаження даних терміналів.
 terminals = [{"terminal_id": "TERMINAL-IDENTIFIER-1",
               "shop_id": "SHOP-IDENTIFIER-1",
               "name": "TERMINAL-1"},
@@ -60,14 +60,14 @@ terminals = [{"terminal_id": "TERMINAL-IDENTIFIER-1",
               "name": "TERMINAL-2"}]
 dw.upload_terminals(terminals)
 
-#Завантажуємо дані касирів
+#Завантаження даних касирів.
 [{"cashier_id": "CASHIER-IDENTIFIER-1",
              "name":"CASHIER-1"},
  {"cashier_id": "CASHIER-IDENTIFIER-2",
              "name":"CASHIER-2"}]
 dw.upload_cashiers(cashiers)
 
-#Завантажуємо дані товарів
+#Завантаження даних товарів.
 products = [{"product_id": "PRODUCT-IDENTIFIER-1",
 			 "article": "PRODUCT-ARTICLE",
 			 "barcode": None,
@@ -84,7 +84,7 @@ products = [{"product_id": "PRODUCT-IDENTIFIER-1",
              "unit_id": "UNIT-IDENTIFIER-2"}]
 dw.upload_products(products)
 
-#Завантажуємо дані клієнтів програми лояльності
+#Завантаження даних клієнтів програми лояльності.
 clients = [{"loyalty_id": "CLIENT-IDENTIFIER-1",
             "cardno": "435756ee345cc453",
             "client_name": u"Дмитро Констянтинович Переп`юк",
