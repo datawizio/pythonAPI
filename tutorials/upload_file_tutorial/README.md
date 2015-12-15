@@ -17,45 +17,45 @@ dw = Up_DW()
 user = dw.register_user('<name>', '<email>', '<password>')
 print user['API_KEY'], ':' , user['API_SECRET']
 ```
-Збережіть обрані email:ключ для подальшого доступу до API.
+Збережіть обрані реєстраційні дані та ключ для подальшого доступу до API.
 
 ###Крок 3 - завантаження даних.
 ```
-#Ініціалізуємо екземпляр класу
+#Ініціалізація екземпляру класу
 dw = Up_DW(API_KEY=user['API_KEY'], API_SECRET = user['API_SECRET'])
 
-#Завантажуємо дані одиниць виміру
+#Завантаження даних одиниць виміру
 dw.upload_units('upload_file_tutorial/data/units.csv')
 
-#Завантажуємо дані магазинів
+#Завантаження даних магазинів
 dw.upload_shops('upload_file_tutorial/data/shops.csv')
 
-#Завантажуємо дані категорій
+#Завантаження даних категорій
 dw.upload_categories('upload_file_tutorial/data/categories.csv')
 
-#Завантажуємо дані терміналів
+#Завантаження даних терміналів
 dw.upload_terminals('upload_file_tutorial/data/terminals.csv')
 
-#Завантажуємо дані касирів
+#Завантаження даних касирів
 dw.upload_cashiers('upload_file_tutorial/data/cashiers.csv')
 
-#Завантажуємо дані товарів
+#Завантаження даних товарів
 dw.upload_products('upload_file_tutorial/data/products.csv')
 
-#Завантажуємо дані клієнтів програми лояльності
+#Завантаження даних клієнтів програми лояльності
 dw.upload_loyalty_client_info('upload_file_tutorial/data/loyalty.csv')
 
-#Завантажуємо дані чеків
+#Завантаження даних чеків
 dw.upload_receipts('upload_file_tutorial/data/receipts.csv')
 
-#Завантажуємо дані цін на товари
+#Завантаження даних ціни на товари
 dw.upload_price('upload_file_tutorial/data/price.csv')
 
-#Завантажуємо дані залишів товарів
+#Завантаження даних залишків товарів
 dw.upload_inventory('upload_file_tutorial/data/inventory.csv')
 
-#Запускаємо процес індексації даних. Після його завершення
-отримаємо листа на вказану електронну адресу.
+#Запуск процесу індексації даних. Після його завершення
+надійде лист на вказану вами електронну адресу.
 dw.upload_to_service('<email>')
 ```
 Після завершення кешування на вказану вами електронну адресу буде надіслано листа. Процес кешування може тривати до кількох годин.
