@@ -477,9 +477,9 @@ class Up_DW(Auth):
 
         chunk_num = 1
         # Якщо переданий список об’єктів клієнта
-        if isinstance(receipts, list):
+        if isinstance(clients, list):
             # Розбиваємо список на частини і відправляємо на сервер
-            for chunk in self._split_list_to_chunks(receipts,
+            for chunk in self._split_list_to_chunks(clients,
                                                     chunk_size=DEFAULT_CHUNK_SIZE):
                 try:
                     invalid_elements = self._post(resource_url, data = chunk.to_dict('records'), chunk=True)
@@ -489,7 +489,7 @@ class Up_DW(Auth):
                 chunk_num += 1
 
         # Якщо ж переданий шлях до файлу
-        elif isinstance(receipts, str) and os.path.isfile(receipts):
+        elif isinstance(clients, str) and os.path.isfile(clients):
             if columns is None:
                 columns = ['loyalty_id',
                            'cardno',
@@ -506,7 +506,7 @@ class Up_DW(Auth):
             subcolums.append('client_name')
             chunk_num = 1
             # Читаємо файл чанками розміром DEFAULT_CHUNK_SIZE
-            reader = pandas.read_csv(receipts,
+            reader = pandas.read_csv(clients,
                                      header = None,
                                      chunksize = DEFAULT_CHUNK_SIZE,
                                      names = columns,

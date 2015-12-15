@@ -5,7 +5,7 @@ import sys
 from os import path
 import datetime
 
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 from datawiz_upload import Up_DW
 dw = Up_DW()
