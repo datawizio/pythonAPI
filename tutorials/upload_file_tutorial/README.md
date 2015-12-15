@@ -1,15 +1,15 @@
-# Upload Data via file Tutorial
+#Керівництво по загрузці даних через файл
 ---
 
 
 
-###Крок 1 - установка бібліотеки datawiz
+###Крок 1 - установка бібліотеки datawiz.
 ```
 git clone https://github.com/datawizio/pythonAPI.git
 cd pythonAPI
 pip install -r requirments.txt
 ```
-###Крок 2 - створення нового користувача
+###Крок 2 - створення нового користувача.
 ```
 python
 from datawiz_upload import Up_DW
@@ -17,8 +17,9 @@ dw = Up_DW()
 user = dw.register_user('<name>', '<email>', '<password>')
 print user['API_KEY'], ':' , user['API_SECRET']
 ```
-Зберігаємо пару email:ключ для подальшого доступу до API
-###Крок 3 - завантаження даних
+Збережіть обрані email:ключ для подальшого доступу до API.
+
+###Крок 3 - завантаження даних.
 ```
 #Ініціалізуємо екземпляр класу
 dw = Up_DW(API_KEY=user['API_KEY'], API_SECRET = user['API_SECRET'])
@@ -54,7 +55,7 @@ dw.upload_price('upload_file_tutorial/data/price.csv')
 dw.upload_inventory('upload_file_tutorial/data/inventory.csv')
 
 #Запускаємо процес індексації даних. Після його завершення
-#отримаємо листа на вказану електронну адресу.
+отримаємо листа на вказану електронну адресу.
 dw.upload_to_service('<email>')
 ```
-Після завершення кешування отримаємо листа на вказану електронну адресу. Процес кешування може тривати від кількох хвилин до кількох годин
+Після завершення кешування на вказану вами електронну адресу буде надіслано листа. Процес кешування може тривати до кількох годин.
