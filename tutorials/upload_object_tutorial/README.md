@@ -21,17 +21,17 @@ print user['API_KEY'], ':' , user['API_SECRET']
 
 ###Крок 3 - завантаження даних.
 ```
-#Ініціалізуємо екземпляр класу
+#Ініціалізація екземпляру класу.
 dw = Up_DW(API_KEY=user['API_KEY'], API_SECRET = user['API_SECRET'])
 
-#Завантажуємо дані одиниць виміру
+#Завантаження даних одиниць виміру.
 units = [{"unit_id": "UNIT-IDENTIFIER-1",
         "name": "UNIT-1"},
          {"unit_id": "UNIT-IDENTIFIER-2",
         "name": "UNIT-2"}]
 dw.upload_units(units)
 
-#Завантажуємо дані магазинів
+#Завантаження даних магазинів.
 shops = [{"shop_id": "SHOP-IDENTIFIER-1",
         "name": "SHOP-1",
         "address": "Golovna st. 25",
@@ -42,7 +42,7 @@ shops = [{"shop_id": "SHOP-IDENTIFIER-1",
         "open_date": "2014-05-27"}]
 dw.upload_shops(shops)
 
-#Завантажуємо дані категорій
+#Завантаження даних категорій.
 categories = [{"category_id": "CATEGORY-IDENTIFIER-1",
               "name": "PARENT-CATEGORY",
               "parent_id": None},
