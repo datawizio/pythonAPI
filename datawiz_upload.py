@@ -503,7 +503,7 @@ class Up_DW(Auth):
                            'email'
                            ]
             # client_name створюємо динамічно, тому додаємо його тут
-            subcolums.append('client_name')
+            # subcolums.append('client_name')
             chunk_num = 1
             # Читаємо файл чанками розміром DEFAULT_CHUNK_SIZE
             reader = pandas.read_csv(clients,
@@ -513,7 +513,7 @@ class Up_DW(Auth):
                                      sep = SEPARATOR,
                                      skiprows = 1)
             for chunk in reader:
-                chunk['client_name'] = chunk[['first_name', 'last_name']].apply(_get_client_name, axis = 1)
+                # chunk['client_name'] = chunk[['first_name', 'last_name']].apply(_get_client_name, axis = 1)
                 chunk = chunk[subcolumns]
                 # Замінює всі значення NaN в таблиці на None
                 # Потрібно, щоб передавати в словнику json значення null замість nan

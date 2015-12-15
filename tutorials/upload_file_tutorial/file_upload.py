@@ -43,11 +43,15 @@ dw.upload_cashiers("data/cashiers.csv")
 
 #Завантажуємо дані товарів
 print "Upload products"
-dw.upload_products("data/products.csv")
+dw.upload_products("data/products.csv", columns = ['product_id',
+                                                   'article',
+                                                   'name',
+                                                   'category_id',
+                                                   'unit_id'])
 
 #Завантажуємо дані клієнтів програми лояльності
 print "Upload loyalty_client_info"
-dw.upload_loyalty_client_info("data/loyalty.csv")
+dw.upload_loyalty_client_info("data/loyalty.csv", ['loyalty_id', 'cardno', 'client_name', 'client_birthday'])
 
 #Завантажуємо дані чеків
 print "Upload receipts"
