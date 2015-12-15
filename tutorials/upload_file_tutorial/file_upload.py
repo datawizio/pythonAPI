@@ -12,12 +12,9 @@ from datawiz_upload import Up_DW
 dw = Up_DW()
 
 #Реєструємо нового користувача
-print "Type username"
-name = raw_input()
-print "Type email"
-email = raw_input()
-print "Type password"
-passwd = raw_input()
+name = 'new_user'
+email = 'my_email@mail.com'
+passwd = '12345'
 
 user = dw.register_user(name, email, passwd)
 #Зберігаємо пару ключ:токен для подальшого доступу до API
@@ -26,34 +23,44 @@ dw = Up_DW(API_KEY=user["API_KEY"], API_SECRET = user["API_SECRET"])
 
 #Завантажуємо дані одиниць виміру
 print "Upload units"
-dw.upload_units("units.csv")
+dw.upload_units("data/units.csv")
+
 #Завантажуємо дані магазинів
 print "Upload shops"
-dw.upload_shops("shops.csv")
+dw.upload_shops("data/shops.csv")
+
 #Завантажуємо дані категорій
 print "Upload categories"
-dw.upload_categories("categories.csv")
+dw.upload_categories("data/categories.csv")
+
 #Завантажуємо дані терміналів
 print "Upload terminals"
-dw.upload_terminals("terminals.csv")
+dw.upload_terminals("data/terminals.csv")
+
 #Завантажуємо дані касирів
 print "Upload cashiers"
-dw.upload_cashiers("cashiers.csv")
+dw.upload_cashiers("data/cashiers.csv")
+
 #Завантажуємо дані товарів
 print "Upload products"
-dw.upload_products("products.csv")
+dw.upload_products("data/products.csv")
+
 #Завантажуємо дані клієнтів програми лояльності
 print "Upload loyalty_client_info"
-dw.upload_loyalty_client_info("loyalty.csv")
+dw.upload_loyalty_client_info("data/loyalty.csv")
+
 #Завантажуємо дані чеків
 print "Upload receipts"
-dw.upload_receipts("receipts.csv")
+dw.upload_receipts("data/receipts.csv")
+
 #Завантажуємо дані цін на товари
 print "Upload price"
-dw.upload_price("price.csv")
+dw.upload_price("data/price.csv")
+
 #Завантажуємо дані залишів товарів
 print "Upload inventory"
-dw.upload_inventory("inventory.csv")
+dw.upload_inventory("data/inventory.csv")
+
 #Запускаємо процес індексації даних. Після його завершення
 #отримаємо листа на вказану електронну адресу.
 print "Upload to service"

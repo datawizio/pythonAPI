@@ -10,20 +10,17 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from datawiz_upload import Up_DW
 dw = Up_DW()
 #Реєструємо нового користувача
-print "Type username"
-name = raw_input()
-print "Type email"
-email = raw_input()
-print "Type password"
-passwd = raw_input()
+name = 'new_user'
+email = 'my_email@mail.com'
+passwd = '12345'
 
-# user = dw.register_user(name, email, passwd)
-user = {}
-user['API_KEY'] = 'gmail@mymail.com'
-user['API_SECRET'] = '76@311299017a8c33687a4eeb57b1f89207'
+
+user = dw.register_user(name, email, passwd)
+
 #Зберігаємо пару ключ:токен для подальшого доступу до API
 print user["API_KEY"], ":" , user["API_SECRET"]
 dw = Up_DW(API_KEY=user["API_KEY"], API_SECRET = user["API_SECRET"])
+
 #Завантажуємо дані одиниць виміру
 units = [{"unit_id": "UNIT-IDENTIFIER-1",
         "name": "UNIT-1"},
@@ -31,6 +28,7 @@ units = [{"unit_id": "UNIT-IDENTIFIER-1",
         "name": "UNIT-2"}]
 print "Upload units"
 dw.upload_units(units)
+
 #Завантажуємо дані магазинів
 shops = [{"shop_id": "SHOP-IDENTIFIER-1",
         "name": "SHOP-1",
@@ -42,6 +40,7 @@ shops = [{"shop_id": "SHOP-IDENTIFIER-1",
         "open_date": "2014-05-27"}]
 print "Upload shops"
 dw.upload_shops(shops)
+
 #Завантажуємо дані категорій
 categories = [{"category_id": "CATEGORY-IDENTIFIER-1",
               "name": "PARENT-CATEGORY",
@@ -51,6 +50,7 @@ categories = [{"category_id": "CATEGORY-IDENTIFIER-1",
               "parent_id": "CATEGORY-IDENTIFIER-1"}]
 print "Upload categories"
 dw.upload_categories(categories)
+
 #Завантажуємо дані терміналів
 terminals = [{"terminal_id": "TERMINAL-IDENTIFIER-1",
               "shop_id": "SHOP-IDENTIFIER-1",
@@ -60,6 +60,7 @@ terminals = [{"terminal_id": "TERMINAL-IDENTIFIER-1",
               "name": "TERMINAL-2"}]
 print "Upload terminals"
 dw.upload_terminals(terminals)
+
 #Завантажуємо дані касирів
 cashiers = [{"cashier_id": "CASHIER-IDENTIFIER-1",
              "name":"CASHIER-1"},
@@ -67,6 +68,7 @@ cashiers = [{"cashier_id": "CASHIER-IDENTIFIER-1",
              "name":"CASHIER-2"}]
 print "Upload cashiers"
 dw.upload_cashiers(cashiers)
+
 #Завантажуємо дані товарів
 products = [{"product_id": "PRODUCT-IDENTIFIER-1",
 			 "article": "PRODUCT-ARTICLE",
@@ -84,6 +86,7 @@ products = [{"product_id": "PRODUCT-IDENTIFIER-1",
              "unit_id": "UNIT-IDENTIFIER-2"}]
 print "Upload products"
 dw.upload_products(products)
+
 #Завантажуємо дані клієнтів програми лояльності
 clients = [{"loyalty_id": "CLIENT-IDENTIFIER-1",
             "cardno": "435756ee345cc453",
@@ -97,6 +100,7 @@ clients = [{"loyalty_id": "CLIENT-IDENTIFIER-1",
              "is_male": False}]
 print "Upload loyalty"
 dw.upload_loyalty_client_info(clients)
+
 #Завантажуємо дані чеків
 cartitems = [{"order_no":"1",
               "product_id": "PRODUCT-IDENTIFIER-1",
@@ -126,6 +130,7 @@ receipts = [{'order_id': 'RECEIPT-IDENTIFIER-1',
 }]
 print "Upload receipts"
 dw.upload_receipts(receipts)
+
 #Завантажуємо дані цін на товари
 prices = [{"shop_id": "SHOP-IDENTIFIER-1",
            "product_id": "PRODUCT-IDENTIFIER-1",
@@ -139,6 +144,7 @@ prices = [{"shop_id": "SHOP-IDENTIFIER-1",
           "price": 3.0}]
 print "Upload prices"
 dw.upload_price(price)
+
 #Завантажуємо дані залишків товарів
 inventory = [{"shop_id": "SHOP-IDENTIFIER-1",
     	     "product_id": "PRODUCT-IDENTIFIER-1",
@@ -148,8 +154,9 @@ inventory = [{"shop_id": "SHOP-IDENTIFIER-1",
              "stock_total_price": 122.5}]
 print "Upload inventory"
 dw.upload_inventory(inventory)
+
 #Запускаємо процес індексації даних.
-print dw.upload_to_service('redvel@mail.ru')
+print dw.upload_to_service(email)
 
 
 
