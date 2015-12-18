@@ -238,8 +238,9 @@ class Up_DW(Auth):
             for chunk in self._split_list_to_chunks(receipts,
                                                     chunk_size=RECEIPTS_CHUNK_SIZE):
                 try:
-                    self._post(RECEIPTS_API_URI, data=chunk)
-                    logging.info('Receipts uploaded')
+
+                    invalid_elements = self._post(RECEIPTS_API_URI, data=chunk, chunk=True)
+                    logging.info('Receipts chunk uploaded, %s elements failed'%len(invalid_elements))
                 except APIUploadError, error:
                     #self._upload_data_recursively
                     logging.error('Receipts chunk #%s upload failed\n%s'%(chunk_num, error))
@@ -482,7 +483,7 @@ class Up_DW(Auth):
             for chunk in self._split_list_to_chunks(clients,
                                                     chunk_size=DEFAULT_CHUNK_SIZE):
                 try:
-                    invalid_elements = self._post(resource_url, data = chunk.to_dict('records'), chunk=True)
+                    invalid_elements = self._post(LOYALTY_API_URL, data = chunk, chunk=True)
                     logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
                     logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
@@ -721,7 +722,8 @@ class Up_DW(Auth):
         """
 
         params = {'function': 'upload_to_service',
-                  'email':email}
+                  'email':email,
+                  'cache': cache}
         return self._post('utils', data=params)['results']
 
     def cache(self,

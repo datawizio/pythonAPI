@@ -11,7 +11,7 @@ from datawiz_upload import Up_DW
 dw = Up_DW()
 #Реєструємо нового користувача
 name = 'new_user'
-email = 'my_email@mail.com'
+email = 'email1@mail.com'
 passwd = '12345'
 
 
@@ -19,6 +19,7 @@ user = dw.register_user(name, email, passwd)
 
 #Зберігаємо пару ключ:токен для подальшого доступу до API
 print user["API_KEY"], ":" , user["API_SECRET"]
+# user = {'API_KEY': 'email1@mail.com', 'API_SECRET': '78@3fe7c8a0ee5df1eba633838c73f56691'}
 dw = Up_DW(API_KEY=user["API_KEY"], API_SECRET = user["API_SECRET"])
 
 #Завантажуємо дані одиниць виміру
@@ -106,17 +107,19 @@ cartitems = [{"order_no":"1",
               "product_id": "PRODUCT-IDENTIFIER-1",
               "base_price": 5.0,
               "price": 15.0,
-              "qty": 3.0},
+              "qty": 3.0,
+              'total_price': 45.0},
              {"order_no":"2",
               "product_id": "PRODUCT-IDENTIFIER-2",
               "base_price": 3.0,
               "price": 6.0,
-              "qty": 2.0}]
+              "qty": 2.0,
+              'total_price': 12.0}]
 receipts = [{'order_id': 'RECEIPT-IDENTIFIER-1',
              'date': '2015-10-11 10:25:39',
              'terminal_id': 'TERMINAL-IDENTIFIER-1',
              'cartitems': cartitems,
-             'loyalty_id': 'LOYALTY-IDENTIFIER-1',
+             'loyalty_id': 'CLIENT-IDENTIFIER-1',
              "cashier_id": "CASHIER-IDENTIFIER-1",
              "shop_id": "SHOP-IDENTIFIER-1"
             },
@@ -124,12 +127,13 @@ receipts = [{'order_id': 'RECEIPT-IDENTIFIER-1',
              'date': '2015-10-11 11:33:46',
              'terminal_id': 'TERMINAL-IDENTIFIER-2',
              'cartitems': cartitems,
-             'loyalty_id': 'LOYALTY-IDENTIFIER-2',
+             'loyalty_id': 'CLIENT-IDENTIFIER-2',
              "cashier_id": "CASHIER-IDENTIFIER-2",
              "shop_id": "SHOP-IDENTIFIER-2"
 }]
 print "Upload receipts"
 dw.upload_receipts(receipts)
+
 
 #Завантажуємо дані цін на товари
 prices = [{"shop_id": "SHOP-IDENTIFIER-1",
@@ -143,7 +147,7 @@ prices = [{"shop_id": "SHOP-IDENTIFIER-1",
           "original_price": 2.8,
           "price": 3.0}]
 print "Upload prices"
-dw.upload_price(price)
+dw.upload_price(prices)
 
 #Завантажуємо дані залишків товарів
 inventory = [{"shop_id": "SHOP-IDENTIFIER-1",
