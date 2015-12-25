@@ -39,6 +39,11 @@ class DW(Auth):
             if isinstance(var, list):
                 return var#splitter.join([str(x) for x in var])
             return [var]
+        def value_in_list(var, lst):
+            if var in lst:
+                return var
+            raise ValueError('Incorrect param value <%s>'%var)
+
         @wraps(func)
         def wrapper(self, **kwargs):
 
@@ -73,16 +78,16 @@ class DW(Auth):
                       'call': lambda x: str(x)},
                   'interval':
                       {'types': str,
-                       'call': lambda x: x if x in INTERVALS else None},
+                       'call': lambda x: value_in_list(x, INTERVALS)},
                   'loyalty':
                       {'types': (int, list),
                        'call': id_list},
                   'by':
                       {'types': str,
-                       'call': lambda x: x if x in MODEL_FIELDS else None},
+                       'call': lambda x: value_in_list(x, MODEL_FIELDS)},
                   'weekday':
                       {'types': int,
-                       'call': lambda x: x if x in range(7) else None},
+                       'call': lambda x: value_in_list(x, range(7))},
                   'weekdays':
                       {'types': list,
                        'call': id_list},
