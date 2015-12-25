@@ -9,7 +9,7 @@ from functools import wraps
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
                 'profit', 'stock_value',
-                'sold_product_value', 'self_price_per_product']
+                'sold_product_value', 'self_price_per_product', 'price']
 DAYS = 'days'
 WEEKS = 'weeks'
 MONTHS = 'months'
