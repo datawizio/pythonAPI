@@ -27,7 +27,7 @@ CLIENT = 'client'
 SHOPS = 'core-shops'
 PAIRS = 'pairs'
 UTILS = 'utils'
-
+LOST_SALES = 'lost-sales'
 
 class DW(Auth):
 
@@ -59,6 +59,9 @@ class DW(Auth):
                   'categories':
                       {'types':(int, list),
                        'call': id_list},
+                  'category':
+                      {'types': int,
+                       'call': lambda x: x},
                   'products':
                       {'types':(int, list),
                        'call': id_list},
@@ -153,12 +156,11 @@ class DW(Auth):
         by: str,
                     {"turnover": Оборот,
                     "qty": Кількість проданих товарів,
-                    "stock_qty": Кількість товарів на залишку,
                     "receipts_qty": Кількість чеків,
                     "profit": прибуток,
-                    "stock_value": собівартість товарів на залишку,
                     "sold_product_value": собівартість проданих товарів,
-                    "self_price_per_product": ціна за одиницю товару
+                    "self_price_per_product": ціна за одиницю товару,
+                    "price": середня ціна товару
             default: "turnover"}
             поле, по якому хочемо отримати результат вибірки.
 
@@ -240,9 +242,7 @@ class DW(Auth):
         by: str,
                     {"turnover": Оборот,
                     "qty": Кількість проданих товарів,
-                    "stock_qty": Кількість товарів на залишку,
                     "profit": прибуток,
-                    "stock_value": собівартість товарів на залишку,
                     "sold_product_value": собівартість проданих товарів,
                     "receipts_qty": кількість чеків
             default: "turnover"}
@@ -1017,6 +1017,58 @@ class DW(Auth):
                   'select': by}
 
         result = self._get(GET_CATEGORIES_STOCK, data=params)['results']
+        if not result:
+            return pd.DataFrame()
+        return pd.read_json(result)
+
+
+    @_check_params
+    def get_lost_sales(self,
+                       date_from=None,
+                       date_to=None,
+                       shops=None,
+                       category=None,
+                       ):
+        """
+        Parameters:
+        ------------
+        category: int
+            id категорії
+        shops: int,list
+            id магазину, або список з id по яких буде робитися вибірка
+        date_from: datetime
+            початкова дата вибірки
+        date_to: datetime
+            кінцева дата вибірки
+
+        Returns:
+        ------------
+            повертає об’єкт DataFrame з результатами вибірки
+             _______________________________________
+                             |Avg sales|Losing Days |losing turnover|Lost Sales Quantity|Product Name|
+            _______________________________________
+             <product_id>   |  <data> |  <data    |     <data>     |        <data>      |   <data>   |
+             <product_id>   |  <data> |  <data    |     <data>     |        <data>      |   <data>   |
+             ...
+             <product_id>   |  <data> |  <data    |     <data>     |        <data>      |   <data>   |
+
+        Examples
+        ------------
+            dw = datawiz.DW()
+            dw.get_lost_sales(category = 68805,
+				shops = [601, 641],
+				date_from = datetime.date(2015, 8, 9),
+				date_to = datetime.date(2015, 9, 9),
+				)
+			Повернути дані по товарних дірах для категорії з id 68805, від 9-8-2015 до 9-9-2015
+			по магазинах  [601, 641],
+        """
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'shops': shops,
+                  'category':category}
+
+        result = self._get(LOST_SALES, data=params)['results']
         if not result:
             return pd.DataFrame()
         return pd.read_json(result)
