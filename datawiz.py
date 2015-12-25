@@ -16,6 +16,8 @@ MONTHS = 'months'
 YEARS = 'years'
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
+GET_PRODUCTS_STOCK = 'products-stock'
+GET_CATEGORIES_STOCK = 'categories-stock'
 GET_PRODUCT = 'core-products'
 GET_RECEIPT = 'core-receipts'
 GET_CATEGORY = 'core-categories'
@@ -878,5 +880,143 @@ class DW(Auth):
             return pd.DataFrame()
         return pd.read_json(result)
 
-    def get_tasks(self):
-        pass
+    @_check_params
+    def get_products_stock(self,
+                           date_from=None,
+                           date_to=None,
+                           shops=None,
+                           categories=None,
+                           products=None,
+                           show='id',
+                           by='qty'):
+        """
+        Parameters:
+        ------------
+        categories: int,list
+            id категорії, або список з id по яких буде робитися вибірка
+        products: int, list
+            id продукта, або список з id по яких буде робитися вибірка
+        shops: int,list
+            id магазину, або список з id по яких буде робитися вибірка
+        date_from: datetime
+            початкова дата вибірки
+        date_to: datetime
+            кінцева дата вибірки
+            Якщо заданий тільки date_to, вибірка буде проводитись тільки для конкретної дати
+            Якщо заданий тільки date_from, вибірка буде проводитися починаючи з date_from
+        by: str,
+                    {
+                    "qty": Кількість товарів на залишку,
+                    "stock_value": собівартість товарів на залишку,
+
+            default: "qty"}
+            поле, по якому хочемо отримати результат вибірки.
+        show: str,
+                    {"name": <product_name> для назв колонок,
+                     "id": <product_id> для назв колонок,
+                     "both": <product_id>_
+                     <product_name> для назв колонок,
+                     default: "id"
+        Returns:
+        ------------
+            повертає об’єкт DataFrame з результатами вибірки
+             _______________________________________
+                     |product1|product2 |...productN|
+            _______________________________________
+             date1   |   by   |    by  |    by    |
+             date2   |   by   |    by  |    by    |
+             ...
+             dateN   |   by   |    by  |    by    |
+
+        Examples
+        ------------
+            dw = datawiz.DW()
+            dw.get_products_stock(categories = [68805, 69607], by='stock_value',
+				shops = [601, 641],
+				date_from = datetime.date(2015, 8, 9),
+				date_to = datetime.date(2015, 9, 9),
+				)
+			Повернути дані вартості товарів на залишку для товарів категорій з id [68805, 69607], від 9-8-2015 до 9-9-2015
+			по магазинах  [601, 641],
+        """
+
+
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'shops': shops,
+                  'categories': categories,
+                  'products': products,
+                  'show': show,
+                  'select': by}
+        result = self._get(GET_PRODUCTS_STOCK, data=params)
+        if not result:
+            return pd.DataFrame()
+        return pd.read_json(result)
+
+    @_check_params
+    def get_categories_stock(self,
+                             date_from=None,
+                             date_to=None,
+                             shops=None,
+                             categories=None,
+                             show='id',
+                             by='qty'):
+        """
+        Parameters:
+        ------------
+        categories: int,list
+            id категорії, або список з id по яких буде робитися вибірка
+        shops: int,list
+            id магазину, або список з id по яких буде робитися вибірка
+        date_from: datetime
+            початкова дата вибірки
+        date_to: datetime
+            кінцева дата вибірки
+            Якщо заданий тільки date_to, вибірка буде проводитись тільки для конкретної дати
+            Якщо заданий тільки date_from, вибірка буде проводитися починаючи з date_from
+        by: str,
+                    {
+                    "qty": Кількість товарів на залишку,
+                    "stock_value": собівартість товарів на залишку,
+
+            default: "qty"}
+            поле, по якому хочемо отримати результат вибірки.
+        show: str,
+                    {"name": <category_name> для назв колонок,
+                     "id": <category_id> для назв колонок,
+                     "both": <category_id>_
+                     <category_name> для назв колонок,
+                     default: "id"
+        Returns:
+        ------------
+            повертає об’єкт DataFrame з результатами вибірки
+             _______________________________________
+                     |category1|category2 |...categoryN|
+            _______________________________________
+             date1   |   by   |    by  |    by    |
+             date2   |   by   |    by  |    by    |
+             ...
+             dateN   |   by   |    by  |    by    |
+
+        Examples
+        ------------
+            dw = datawiz.DW()
+            dw.get_categories_stock(categories = [68805, 69607], by='stock_value',
+				shops = [601, 641],
+				date_from = datetime.date(2015, 8, 9),
+				date_to = datetime.date(2015, 9, 9),
+				)
+			Повернути дані вартості товарів на залишку для категорій з id [68805, 69607], від 9-8-2015 до 9-9-2015
+			по магазинах  [601, 641],
+        """
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'shops': shops,
+                  'categories': categories,
+                  'show': show,
+                  'select': by}
+
+        result = self._get(GET_CATEGORIES_STOCK, data=params)['results']
+        if not result:
+            return pd.DataFrame()
+        return pd.read_json(result)
