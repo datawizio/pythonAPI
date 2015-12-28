@@ -44,6 +44,15 @@ class DW(Auth):
                 return var
             raise ValueError('Incorrect param value <%s>'%var)
 
+        def stringify_date(date, format='%Y-%m-%d'):
+            if isinstance(date, str):
+                datetime.datetime.strptime(date, format)
+                return date
+            elif isinstance(date, (datetime.date, datetime.datetime)):
+                return str(date)
+            return None
+
+
         @wraps(func)
         def wrapper(self, **kwargs):
 
@@ -71,11 +80,11 @@ class DW(Auth):
                       {'types':(int, list),
                        'call': id_list},
                   'date_from':
-                      {'types': datetime.date,
-                       'call': lambda x: str(x)},
+                      {'types': (datetime.date, str),
+                       'call': stringify_date},
                   'date_to':
-                      {'types': datetime.date,
-                      'call': lambda x: str(x)},
+                      {'types': (datetime.date, str),
+                      'call': stringify_date},
                   'interval':
                       {'types': str,
                        'call': lambda x: value_in_list(x, INTERVALS)},
@@ -907,8 +916,8 @@ class DW(Auth):
             початкова дата вибірки
         date_to: datetime
             кінцева дата вибірки
-            Якщо заданий тільки date_to, вибірка буде проводитись тільки для конкретної дати
-            Якщо заданий тільки date_from, вибірка буде проводитися починаючи з date_from
+            Якщо заданий тільки date_to, вибірка буде проводитись тільки для date_to
+                Якщо заданий тільки date_from, вибірка буде проводитися починаючи з date_from
         by: str,
                     {
                     "qty": Кількість товарів на залишку,
