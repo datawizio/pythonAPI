@@ -28,6 +28,7 @@ SHOPS = 'core-shops'
 PAIRS = 'pairs'
 UTILS = 'utils'
 LOST_SALES = 'lost-sales'
+SALES_PLAN = 'sales-plan'
 
 class DW(Auth):
 
@@ -85,6 +86,8 @@ class DW(Auth):
                   'date_to':
                       {'types': (datetime.date, str),
                       'call': stringify_date},
+                  'date': {'types': (datetime.date, str),
+                           'call': lambda x: stringify_date(x, format="%Y-%m")},
                   'interval':
                       {'types': str,
                        'call': lambda x: value_in_list(x, INTERVALS)},
@@ -115,7 +118,9 @@ class DW(Auth):
                   'name': {'types': (str, list),
                            'call': id_list},
                   'loyalty_id': {'types': (int, list),
-                                 'call': id_list}
+                                 'call': id_list},
+                  'on': {'types': str,
+                         'call': lambda x: value_in_list(x, ['category', 'shops'])}
                 }
         return wrapper
 
@@ -1086,3 +1091,83 @@ class DW(Auth):
         if not result:
             return pd.DataFrame()
         return pd.read_json(result)
+
+    @_check_params
+    def get_sales_plan(self,
+                       date=None,
+                       category=None,
+                       shops=None,
+                       by = 'qty',
+                       show ='name',
+                       on = 'category'):
+
+        """
+        Parameters:
+        ------------------
+        date: datetime, str {"%Y-%m"},
+        Період, по якому хочемо отримати результати
+        category: int
+        id категорії, для якої хочемо отримати результат
+        shops: int, list
+        id магазину, або список id, по яких буде робитись вибірка
+        by: str {'qty': кількість продажів,
+                'turnover': оборот,
+                'receipts_qty': кількість чеків
+                }
+        тип таблиці
+        show: str, {'id', 'name', 'both'}
+        тип виводу для іменованих колонок
+        on: str {'category', 'shops'}
+        параметр визначає, як саме групувати результати (по категоріях чи магазинах)
+
+
+        Returns
+        ------------
+        Повертає об’єкт DataFrame в форматі
+
+        для on = "shops"
+
+        diff    |   diff_percent  |  estimate |  predicted  |  real  |  shop   |
+        ------------------------------------------------------------------------
+        <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shop1> |
+        <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shop2> |
+        ...
+        <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shopN> |
+
+
+
+        для on = "category"
+
+        category    |    diff    |   diff_percent  |  estimate |  predicted  |  real  |  shop   |
+        ----------------------------------------------------------------------------------------
+        <category1>  |  <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shop1> |
+        <category2>  |  <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shop1> |
+        <category1>  |  <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shop2> |
+        <category2>  |  <data>  |      <data>    |   <data>  |    <data>   | <data>  | <shop2> |
+
+
+
+
+
+
+        Examples
+        -----------------
+        dw = datawiz.DW()
+        dw.get_sales_plan(category = 68805,
+				shops = [601, 641],
+				date = datetime.date(2015, 8, 1),
+			)
+        """
+
+        params = {'date': date,
+                  'category': category,
+                  'shops': shops,
+                  'select': by,
+                  'on': on,
+                  'show': show}
+
+        result = self._get(SALES_PLAN, data=params)['results']
+        if not result:
+            return pd.DataFrame()
+
+        return pd.DataFrame.from_records(result)
