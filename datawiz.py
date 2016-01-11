@@ -29,6 +29,9 @@ PAIRS = 'pairs'
 UTILS = 'utils'
 LOST_SALES = 'lost-sales'
 SALES_PLAN = 'sales-plan'
+SALES = 'sales'
+SALE_INFO = 'sale-info'
+SALE_DYNAMICS = 'sale-dynamics'
 
 class DW(Auth):
 
@@ -115,6 +118,8 @@ class DW(Auth):
                             'call': id_list},
                   'cardno': {'types': (str, list),
                              'call': id_list},
+                  'sale_id': {'types': (int, list),
+                              'call': id_list},
                   'name': {'types': (str, list),
                            'call': id_list},
                   'loyalty_id': {'types': (int, list),
@@ -1170,4 +1175,126 @@ class DW(Auth):
         if not result:
             return pd.DataFrame()
 
+        return pd.DataFrame.from_records(result)
+
+    @_check_params
+    def get_sales(self,
+                  date_from=None,
+                  date_to=None,
+                  sale_id=None,
+                  shops=None):
+
+        """
+        Parameters
+        --------------------
+        date_from: datetime
+        Початкова дата вибірки
+        date_to: datetime
+        Кінцева дата вибірки
+        sale_id: int, list
+        id акції, або список id
+
+        Returns
+        -------------------------
+        Повертає об`єкт DataFrame в форматі
+
+
+        date_from   |  date_to  |   profit   |  qty  |   receipts_qty  | sale_id  | turnover |
+        --------------------------------------------------------------------------------------
+        <date_from> | <date_to> | <profit>   | <qty> |  <receipts_qty> | <sale_id>| <turnover>
+        <date_from> | <date_to> | <profit>   | <qty> |  <receipts_qty> | <sale_id>| <turnover>
+        <date_from> | <date_to> | <profit>   | <qty> |  <receipts_qty> | <sale_id>| <turnover>
+
+        Examples
+        -----------------------
+        dw = datawiz.DW()
+        dw.get_sales(date_from = datetime.date(2015, 8, 9),
+				date_to = datetime.date(2015, 9, 9)
+
+		Повернути всі акції, що проходили в період з 9-8-2015  по  9-9-2015)
+
+
+
+
+        """
+
+        params = {'date_from': date_from,
+                  'date_to': date_to,
+                  'sale_id': sale_id,
+                  'sale_shops':shops}
+        result = self._get(SALES, data=params)['results']
+        if not result:
+            return pd.DataFrame()
+        return pd.read_json(result)
+
+
+    def get_sale_info(self,sale_id, shops=None):
+        """
+        Parameters
+        -------------
+        sale_id: int
+        Id акції
+        shops: int, list
+        id магазину, або список id, для яких хочемо отримати
+        результат
+
+        Returns
+        -------------
+        Повертає об`єкт DataFrame в форматі
+
+        Product Name|Product Price|Product price difference|...|turnover_diff|turnover_percent_diff
+        --------------------------------------------------------------------------------------------
+           <data>   |    <data>   |         <data>         |...|    <data>   |      <data>          |
+           <data>   |    <data>   |         <data>         |...|    <data>   |      <data>          |
+           <data>   |    <data>   |         <data>         |...|    <data>   |      <data>          |
+
+
+
+        Examples
+        --------------
+        dw = datawiz.DW()
+        dw.get_sale_info(45)
+
+        Повернути інформацію для акції з id=45
+
+        """
+
+        params = {'sale_id': sale_id,
+                  'shops': shops}
+        result = self._get(SALE_INFO, data=params)['results']
+        if not result:
+            return pd.DataFrame()
+        return pd.DataFrame.from_records(result)
+
+    @_check_params
+    def get_sales_dynamics(self,
+                           sale_id=None,
+                           shops=None,
+                           date_from=None,
+                           date_to=None,
+                           by='turnover'):
+
+        """
+        Parameters
+        -----------
+        sale_id: int, list
+        Id акції, або список id
+        shops: int, list
+        Id магазину, або список id
+        date_from: datetime, str {%Y-%m-%d}
+        Початкова дата вибірки
+        date_to: datetime, str {%Y-%m-%d}
+        Кінцева дата вибірки
+        by: str, {'turnover', 'receipts_qty', default='turnover'}
+
+        """
+
+        params = {'sale_id': sale_id,
+                  'shops': shops,
+                  'date_from': date_from,
+                  'date_to': date_to,
+                  'by': by}
+        result = self._get(SALE_DYNAMICS, data=params)['results']
+        if not result:
+            return pd.DataFrame()
         return pd.DataFrame.from_records(result)
