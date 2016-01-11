@@ -1260,7 +1260,7 @@ class DW(Auth):
         """
 
         params = {'sale_id': sale_id,
-                  'shops': shops}
+                  'sale_shops': shops}
         result = self._get(SALE_INFO, data=params)['results']
         if not result:
             return pd.DataFrame()
@@ -1272,7 +1272,8 @@ class DW(Auth):
                            shops=None,
                            date_from=None,
                            date_to=None,
-                           by='turnover'):
+                           by='turnover',
+                           show='name'):
 
         """
         Parameters
@@ -1290,11 +1291,12 @@ class DW(Auth):
         """
 
         params = {'sale_id': sale_id,
-                  'shops': shops,
+                  'sale_shops': shops,
                   'date_from': date_from,
                   'date_to': date_to,
-                  'by': by}
+                  'by': by,
+                  'show': show}
         result = self._get(SALE_DYNAMICS, data=params)['results']
         if not result:
             return pd.DataFrame()
-        return pd.DataFrame.from_records(result)
+        return pd.read_json(result)
