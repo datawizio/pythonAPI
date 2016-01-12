@@ -53,7 +53,7 @@ class DW(Auth):
                 datetime.datetime.strptime(date, format)
                 return date
             elif isinstance(date, (datetime.date, datetime.datetime)):
-                return str(date)
+                return date.strftime(format)
             return None
 
 
