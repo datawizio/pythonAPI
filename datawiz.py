@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 #coding:utf-8
 
-import datetime
+import datetime, shutil, os, zipfile
 import pandas as pd
 from datawiz_auth import Auth
 from functools import wraps
+import logging
+logging.basicConfig(
+    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
+    level = logging.DEBUG, file = 'C:/log.txt')
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
@@ -25,8 +29,12 @@ GET_LOYALTY_CUSTOMER = 'get_loyalty_customer'
 SEARCH = 'search'
 CLIENT = 'client'
 SHOPS = 'core-shops'
+UNITS = 'units'
+TERMINALS = 'terminals'
+CASHIERS = 'cashiers'
 PAIRS = 'pairs'
 UTILS = 'utils'
+LOYALTY_SALES = 'loyalty-sales'
 LOST_SALES = 'lost-sales'
 SALES_PLAN = 'sales-plan'
 SALES = 'sales'
@@ -55,7 +63,6 @@ class DW(Auth):
             elif isinstance(date, (datetime.date, datetime.datetime)):
                 return date.strftime(format)
             return None
-
 
         @wraps(func)
         def wrapper(self, **kwargs):
@@ -125,9 +132,40 @@ class DW(Auth):
                   'loyalty_id': {'types': (int, list),
                                  'call': id_list},
                   'on': {'types': str,
-                         'call': lambda x: value_in_list(x, ['category', 'shops'])}
+                         'call': lambda x: value_in_list(x, ['category', 'shops'])},
+                  'active': {'types': bool,
+                              'call': lambda x: x}
                 }
         return wrapper
+
+    def _prepare_raw_results(self, results):
+        res = {}
+        for key, value in results.iteritems():
+            if isinstance(key, (str, unicode)) and  not 'url' in key:
+                res[key] = value
+        return res
+
+    def _get_raw_data(self, url):
+        """
+        Функція для посторінкового завантаження даних. Повертає генератор
+        """
+
+        page = 1
+        has_next = True
+        if has_next:
+            data = self._get(url, data={'page': page})
+            results = data.get('results', None)
+            if results:
+                has_next=data['next']
+                page+=1
+                yield self._prepare_raw_results(results)
+
+    def _get_data_by_daterange(self, func, date_from, date_to):
+
+        date_range = [x.date() for x in pd.date_range(start=date_form, end=date_to)]
+        for date in date_range:
+            yield func(date_from=date, date_to=date)
+
 
     def _deserialize(self, obj, fields={}):
         """
@@ -244,7 +282,8 @@ class DW(Auth):
                             weekday = None,
                             interval = 'days',
                             by = 'turnover',
-                            show = 'name'):
+                            show = 'name',
+                            hours=None):
         """
         Parameters:
         ------------
@@ -310,7 +349,8 @@ class DW(Auth):
                   'select' : by,
                   'interval': interval,
                   'weekday': weekday,
-                  'show': show}
+                  'show': show,
+                  'hours': hours}
         result = self._get(GET_CATEGORIES_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
@@ -553,8 +593,8 @@ class DW(Auth):
             dw.get_category(categories = [51171, 51172])
         """
         if categories is not None and len(categories) == 1:
-            return self._get('%s/%s'%(GET_CATEGORY, categories[0]))
-        return self._get(GET_CATEGORY, data = {'categories': categories})
+            return self._get('%s/%s'%(GET_CATEGORY, categories[0]))['results']
+        return self._get(GET_CATEGORY, data = {'categories': categories})['results']
 
     def search(self, query, by = "product"):
         """
@@ -761,6 +801,7 @@ class DW(Auth):
         params = {'id_list': id_list,
                   'id_type': typ,
                   'function': 'id2name'}
+        print params
         return dict(self._post(UTILS, data = params)['results'])
 
     def name2id(self, name_list, typ = 'category'):
@@ -1182,7 +1223,8 @@ class DW(Auth):
                   date_from=None,
                   date_to=None,
                   sale_id=None,
-                  shops=None):
+                  shops=None,
+                  active=False):
 
         """
         Parameters
@@ -1221,7 +1263,8 @@ class DW(Auth):
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'sale_id': sale_id,
-                  'sale_shops':shops}
+                  'sale_shops':shops,
+                  'active': active}
         result = self._get(SALES, data=params)['results']
         if not result:
             return pd.DataFrame()
@@ -1300,3 +1343,75 @@ class DW(Auth):
         if not result:
             return pd.DataFrame()
         return pd.read_json(result)
+
+
+    @_check_params
+    def get_loyalty_sales(self,
+                           shops=None,
+                           date_from=None,
+                           date_to=None,
+                           ):
+
+        """
+        Parameters
+        -----------
+        shops: int, list
+        Id магазину, або список id
+        date_from: datetime, str {%Y-%m-%d}
+        Початкова дата вибірки
+        date_to: datetime, str {%Y-%m-%d}
+        Кінцева дата вибірки
+
+        """
+
+        params = {
+                  'shops': shops,
+                  'date_from': date_from,
+                  'date_to': date_to
+        }
+
+        result = self._get(LOYALTY_SALES, data=params)['results']
+        if not result:
+            return pd.DataFrame()
+        return pd.DataFrame.from_records(result)
+
+    def _zipdir(self, path, ziph):
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                ziph.write(os.path.join(root, file), file)
+
+    def download_data(self, path=None):
+        csv.register_dialect('unixpwd', delimiter=';', lineterminator='\n')
+        if path is None:
+            path = os.path.dirname(os.path.realpath(__file__))
+        tmp_dir = os.path.join(path, 'tmp')
+        if not os.path.isdir(tmp_dir):
+            os.mkdir(tmp_dir)
+        files = {'cashiers': ('cashiers', ['cashier_id', 'name']),
+             'shops': ('shops', ['shop_id', 'name', 'address', 'open_date', 'longitude', 'latitude']),
+             'terminals': ('terminals', ['terminal_id', 'shop_id', 'name']),
+             'units': ('units', ['unit_id', 'name']),
+             'products': ('products', ['product_id', 'article', 'barcode', 'name', 'category_id', 'unit_id']),
+             'clients': ('loyalty', ['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male']),
+             'prices': ('date-prices', ['shop_id', 'product_id', 'date', 'original_price', 'price']),
+             'inventory': ('product-inventory', ['shop_id', 'product_id','date', 'qty', 'price', 'total_price']),
+             'receipts': ('core-cartitems', ['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date', 'product_id','price','qty', 'total_price'])}
+        
+        for file,data in files.iteritems():
+
+            print 'Donwloading %s'%file
+            logging.info('Donwloading %s'%file)
+            with open(os.path.join(tmp_dir, '%s.csv'%file), 'w') as fh:
+                writer = csv.DictWriter(fh, fieldnames=data[1], dialect='unixpwd')
+                writer.writeheader()
+                for items in self._get_raw_data(data[0]):
+                    [writer.writerow(dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x in items]
+                print '%s done'%file
+                logging.info('%s done!'%file)
+
+        ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip')%datetime.datetime.now().strftime('%Y-%m-%d'), 'w')
+        self._zipdir(tmp_dir, ziph)
+        ziph.close()
+        shutil.rmtree(tmp_dir)
+        logging.info('All done!')
+
