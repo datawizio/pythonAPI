@@ -10,10 +10,10 @@ import urllib
 
 TEST_KEY_ID = 'test1@mail.com'
 TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
-HEADERS = {'Host': 'test.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
-SIGNATURE_HEADERS = ['accept', 'date', 'host']
+HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
-API_URL = 'http://test.datawiz.io/api/v1'
+API_URL = 'http://api.datawiz.io/api/v1'
 FAILED_FILE = '%s_failed.csv'
 
 class APIGetError(Exception):
@@ -100,11 +100,20 @@ class Auth:
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
                     # Вичисляємо список індексів елементів чанку, які викликали помилку
-                    failed_elements = [error.index(x) for x in error if x!={}]
+                    new_chunk = []
+                    failed_elements = 0
+                    for i, element in enumerate(error):
+                        if element == {}:
+                            new_chunk.append(data[i])
+                        else:
+                            failed_elements+=1
+                    # failed_elements = [error.index(x) for x in error if x!={}]
                     # Формуємо чанк, який не буде викликати помилку на сервері
-                    data = [x for x in data if data.index(x) not in failed_elements]
+                    # data = [x for x in data if data.index(x) not in failed_elements]
+                    print 'Sending duplicate..'
+                    print failed_elements, len(data)
                     # Відправляємо сформований чанк на сервер
-                    requests.post('%s/%s/'%(API_URL, resource_url), data = json.dumps(data),  auth = auth, headers = headers)
+                    requests.post('%s/%s/'%(API_URL, resource_url), data = json.dumps(new_chunk),  auth = auth, headers = headers)
                     # Повертаємо індекси невірних елементів, для подальшої обробки, або виводу користувачу
                     return failed_elements
                 raise APIUploadError('Error, while loading data. %s'%str(error.get('detail', '')))
