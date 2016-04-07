@@ -8,11 +8,8 @@ from dwapi.test.settings import SettingsManager
 
 class TestMain(unittest.TestCase):
     
-    def __init__(self, *args, **kwargs):
-        self.TEST_SETTINGS = SettingsManager()
-        self.dw = TEST_SETTINGS.USER
-
-
+    self.TEST_SETTINGS = SettingsManager()
+    self.dw = TEST_SETTINGS.USER
 
     def setUp(self):
         pass
