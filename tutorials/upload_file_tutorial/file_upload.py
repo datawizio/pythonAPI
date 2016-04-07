@@ -1,14 +1,8 @@
 #!/usr/bin/env python
 #coding: utf-8
 
-import sys
-from os import path
-
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-
-
 import datetime
-from datawiz_upload import Up_DW
+from dwapi.datawiz_upload import Up_DW
 dw = Up_DW()
 
 #Реєструємо нового користувача

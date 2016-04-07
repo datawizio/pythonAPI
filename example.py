@@ -1,10 +1,9 @@
-#coding:utf8
 '''
 Приклад роботи с datawiz API
 '''
 
 import datetime
-import datawiz 
+from dwapi import datawiz 
 
 date_from = datetime.date(2015, 8, 9)
 date_to = datetime.date(2015, 9, 12)
