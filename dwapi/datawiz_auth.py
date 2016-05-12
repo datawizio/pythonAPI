@@ -159,3 +159,29 @@ class Auth:
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
         return response.json()
+
+
+    def register_user(self, name, email, password):
+        """
+        Функція реєструє нового користувача і повертає створену пару API_KEY:API_SECRET
+
+        Returns
+        -----------------
+        Повертає словник
+        {
+          'API_KEY': <API_KEY>,
+          'API_SECRET': <API_SECRET>
+
+        }
+
+        """
+        params = {'name':name,
+                  'email': email,
+                  'password': password}
+        return self._post('register_user', data=params)['detail']
+
+    def generate_secret(self, email, password):
+
+        params = {'email': email,
+                  'password':password}
+        return self._post('user_gen_token', data=params)['detail']

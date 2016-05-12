@@ -756,24 +756,12 @@ class Up_DW(Auth):
                   'email':email}
         return self._post('utils', data=params)['results']
 
-    def register_user(self, name, email, password):
-        """
-        Функція реєструє нового користувача і повертає створену пару API_KEY:API_SECRET
+    def clear_client(self, email, dlt=False):
+        params = {'function':'clear_client',
+                  'dlt':dlt,
+                  'email':email}
+        return self._post('utils', data=params)['results']
 
-        Returns
-        -----------------
-        Повертає словник
-        {
-          'API_KEY': <API_KEY>,
-          'API_SECRET': <API_SECRET>
-
-        }
-
-        """
-        params = {'name':name,
-                  'email': email,
-                  'password': password}
-        return self._get('register_user', data=params)['detail']
 
     def upload_data(self, path=None):
 
