@@ -76,7 +76,7 @@ class Auth:
         передаючи серверу параметри із params
         Повертає словник в форматі json
         """
-        signature_headers = ['accept', 'date', 'host']
+        signature_headers = ['accept', 'date', 'host', '(request-target)']
         headers = HEADERS
         headers['content-type'] = "application/json"
         auth = HTTPSignatureAuth(key_id = self.API_KEY,
