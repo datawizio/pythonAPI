@@ -14,6 +14,7 @@ HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 
 SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
 API_URL = 'http://bi.datawiz.io/api/v1'
+DEFAULT_HOST = 'bi.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 class APIGetError(Exception):
@@ -27,6 +28,8 @@ class Auth:
     def __init__(self, API_KEY = TEST_KEY_ID , API_SECRET = TEST_SECRET):
         # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
         self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
+        self.HEADERS = HEADERS
+        self.API_URL = API_URL
 
     def _to_csv(self, data, filename):
         fh = open(filename, 'a+')
@@ -49,9 +52,9 @@ class Auth:
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         # Особливість urlencode - кодує значення somevar = None в строку "somevar=None", тому замінюємо всі None на пусті значення
         try:
-            response = requests.get('%s/%s/?%s'%(API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
+            response = requests.get('%s/%s/?%s'%(self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
                                     auth = auth,
-                                    headers = HEADERS,
+                                    headers = self.HEADERS,
                                     data=json.dumps(data))
         except RequestException, error:
             raise APIGetError("Error, while loading data. %s"%error)
@@ -77,7 +80,7 @@ class Auth:
         Повертає словник в форматі json
         """
         signature_headers = ['accept', 'date', 'host', '(request-target)']
-        headers = HEADERS
+        headers = self.HEADERS
         headers['content-type'] = "application/json"
         auth = HTTPSignatureAuth(key_id = self.API_KEY,
                     secret = self.API_SECRET,
@@ -86,7 +89,7 @@ class Auth:
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = requests.post('%s/%s/'%(API_URL, resource_url), data = json.dumps(data),  auth = auth, headers = headers)
+            response = requests.post('%s/%s/'%(self.API_URL, resource_url), data = json.dumps(data),  auth = auth, headers = headers)
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
 
@@ -131,7 +134,7 @@ class Auth:
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = requests.put('%s/%s/'%(API_URL, resource_url), params = params, data = json.dumps(data),  auth = auth, headers = HEADERS)
+            response = requests.put('%s/%s/'%(self.API_URL, resource_url), params = params, data = json.dumps(data),  auth = auth, headers = self.HEADERS)
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
 
@@ -155,11 +158,17 @@ class Auth:
                     algorithm = 'hmac-sha256',
                     headers = SIGNATURE_HEADERS)
         try:
-            response = requests.options('%s/%s/'%(API_URL, resource_url), auth = auth, headers = HEADERS)
+            response = requests.options('%s/%s/'%(self.API_URL, resource_url), auth = auth, headers = self.HEADERS)
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
         return response.json()
 
+    def set_host(self, host=None):
+        if host is None:
+            host = DEFAULT_HOST
+        self.HEADERS['HOST'] = host
+        self.API_URL = 'http://%s/api/v1'%host
+        return True
 
     def register_user(self, name, email, password):
         """
