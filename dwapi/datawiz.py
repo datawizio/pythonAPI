@@ -135,7 +135,10 @@ class DW(Auth):
                   'loyalty_id': {'types': (int, list),
                                  'call': id_list},
                   'on': {'types': str,
-                         'call': lambda x: value_in_list(x, ['category', 'shops'])}
+                         'call': lambda x: value_in_list(x, ['category', 'shops'])},
+                  'level': {'types':int,
+                            'call': lambda x: x}
+
                 }
         return wrapper
 
@@ -596,7 +599,7 @@ class DW(Auth):
             return self._get('%s/%s'%(GET_CATEGORY, categories[0]))
         return self._get(GET_CATEGORY, data = {'categories': categories})
 
-    def search(self, query, by = "product"):
+    def search(self, query, by = "product", level=None):
         """
             Parameters:
             ------------
@@ -631,7 +634,7 @@ class DW(Auth):
 
         if not by in ["product", "category"]:
             raise TypeError("Incorrect param type")
-        return dict(self._get(SEARCH, params = {'q': query, 'by': by})['results'])
+        return dict(self._get(SEARCH, params = {'q': query, 'by': by, 'level':level})['results'])
 
     def get_shops(self):
         """
