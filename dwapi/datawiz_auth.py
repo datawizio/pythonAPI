@@ -10,10 +10,10 @@ import urllib
 
 TEST_KEY_ID = 'test1@mail.com'
 TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
-HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+HEADERS = {'Host': 'poster.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
 SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
-API_URL = 'http://bi.datawiz.io/api/v1'
+API_URL = 'http://poster.datawiz.io/api/v1'
 DEFAULT_HOST = 'bi.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
@@ -25,11 +25,12 @@ class APIUploadError(Exception):
 
 class Auth:
 
-    def __init__(self, API_KEY = TEST_KEY_ID , API_SECRET = TEST_SECRET):
+    def __init__(self, API_KEY = TEST_KEY_ID , API_SECRET = TEST_SECRET, HOST = None):
         # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
         self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
         self.HEADERS = HEADERS
         self.API_URL = API_URL
+        self._set_host(HOST)
 
     def _to_csv(self, data, filename):
         fh = open(filename, 'a+')
@@ -163,10 +164,10 @@ class Auth:
             raise APIUploadError("Error, while loading data. %s"%error)
         return response.json()
 
-    def set_host(self, host=None):
+    def _set_host(self, host=None):
         if host is None:
             host = DEFAULT_HOST
-        self.HEADERS['HOST'] = host
+        self.HEADERS['Host'] = host
         self.API_URL = 'http://%s/api/v1'%host
         return True
 
