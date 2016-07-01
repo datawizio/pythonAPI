@@ -330,7 +330,7 @@ class Up_DW(Auth):
                               splitter = splitter)
         return True
 
-    @_check_columns(['product_id', 'article', 'name', 'category_id', 'unit_id'])
+    @_check_columns(['product_id', 'article','barcode', 'name', 'category_id', 'unit_id'])
     def upload_products(self, products, columns = None, subcolumns = None, splitter = SEPARATOR):
 
         """
