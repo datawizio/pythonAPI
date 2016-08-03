@@ -13,7 +13,7 @@ TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
 HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
 SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
-API_URL = 'http://bi.datawiz.io/api/v1'
+API_URL = 'https://bi.datawiz.io/api/v1'
 DEFAULT_HOST = 'bi.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
@@ -168,7 +168,7 @@ class Auth:
         if host is None:
             host = DEFAULT_HOST
         self.HEADERS['Host'] = host
-        self.API_URL = 'http://%s/api/v1'%host
+        self.API_URL = 'https://%s/api/v1'%host
         return True
 
     def register_user(self, name, email, password):
