@@ -23,6 +23,10 @@ SHOPS_API_URL = 'shops'
 # STOCKS_API_URL = 'stock'
 PRICE_API_URL = 'date-prices'
 STOCK_API_URL = 'product-inventory'
+PURCHASE_DOCUMENT_URL = 'purchase_documents'
+RECEIVE_DOCUMENT_URL = 'receive_documents'
+RELOCATE_DOCUMENT_URL = 'relocate_documents'
+SUPPLIER_URL = 'suppliers'
 RECEIPTS_CHUNK_SIZE = 1000
 DEFAULT_CHUNK_SIZE = 1000
 SEPARATOR = ';'
@@ -699,6 +703,180 @@ class Up_DW(Auth):
                                      columns = columns,
                                      subcolumns = subcolumns,
                                      splitter = splitter)
+
+
+    @_check_columns(['supplier_id', 'name'])
+    def upload_suppliers(self, suppliers, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервер дані постачальників
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "supplier_id": <supplier_id>,
+                "name": <name>,
+                "supplier_code":<supplier_code>,
+                "phone":<phone>,
+                "commodity_credit_days":<commodity_credit_days>,
+                "address":<address>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['supplier_id',
+                           'name', 'supplier_code',
+                           'phone', 'commodity_credit_days',
+                           'address']
+
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['supplier_id',
+                       'name', 'supplier_code',
+                       'phone', 'commodity_credit_days',
+                       'address']
+
+        return self._send_chunk_data(SUPPLIER_URL, suppliers,
+                                     columns = columns,
+                                     subcolumns = subcolumns,
+                                     splitter = splitter)
+
+    @_check_columns(['document_id', 'shop_id',
+                     'supplier_id', 'product_id',
+                     'qty', 'document_date',
+                     'responsible','order_date', 'price', 'price_total'])
+    def upload_purchase_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервер документи на замовлення товарів
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "document_id": <document_id>,
+                "shop_id": <shop_id>,
+                "supplier_id":<supplier_id>,
+                "product_id":<product_id>,
+                "qty":<qty>,
+                "document_date":<document_date>,
+                "document_number": <document_number>,
+                "responsible": <responsible>,
+                "order_date": <order_date>,
+                "price": "<price>",
+                "price_total":<price_total>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['document_id', 'shop_id',
+                           'supplier_id', 'product_id',
+                           'qty', 'document_date',
+                           'responsible','order_date', 'price', 'price_total', 'document_number']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['document_id', 'shop_id',
+                     'supplier_id', 'product_id',
+                     'qty', 'document_date',
+                     'responsible','order_date',
+                       'price', 'price_total', 'document_number']
+
+        return self._send_chunk_data(PURCHASE_DOCUMENT_URL, docs,
+                                     columns = columns,
+                                     subcolumns = subcolumns,
+                                     splitter = splitter)
+
+    @_check_columns(['document_id', 'supplier_id', 'shop_id',
+                     'document_date', 'responsible', 'product_id', 'qty', 'price', 'price_total'])
+    def upload_receive_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер документи отримання товарів
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "document_id": <document_id>,
+                "shop_id": <shop_id>,
+                "supplier_id":<supplier_id>,
+                "product_id":<product_id>,
+                "qty":<qty>,
+                "document_date":<document_date>,
+                "document_number": <document_number>,
+                "responsible": <responsible>,
+                "order_id": <order_id>,
+                "price": "<price>",
+                "price_total":<price_total>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['document_id', 'shop_id',
+                           'supplier_id', 'product_id',
+                           'qty', 'document_date',
+                           'document_number',
+                           'responsible','order_id', 'price', 'price_total']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+
+        if columns is None:
+            columns = ['document_id', 'supplier_id', 'document_number','order_id', 'shop_id',
+                     'document_date', 'responsible', 'product_id', 'qty', 'price', 'price_total']
+
+        return self._send_chunk_data(RECEIVE_DOCUMENT_URL, docs,
+                                     columns = columns,
+                                     subcolumns = subcolumns,
+                                     splitter = splitter)
+
+    @_check_columns(['relocate_id', 'relocate_date', 'product_id', 'qty'])
+    def upload_relocate_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+
+        """
+        Функція завантажує на сервер документи переміщення товарів
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "relocate_id": <relocate_id>,
+                "relocate_date": <relocate_date>,
+                "sender_shop_id": <sender_shop_id>,
+                "receiver_shop_id": <receiver_shop_id>,
+                "product_id":<product_id>,
+                "qty":<qty>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['document_id', 'shop_id',
+                           'supplier_id', 'product_id',
+                           'qty', 'document_date',
+                           'document_number',
+                           'responsible','order_id', 'price', 'price_total', 'qty']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns =['relocate_id', 'relocate_date', 'sender_shop_id', 'receiver_shop_id', 'product_id', 'qty']
+
+        return self._send_chunk_data(RELOCATE_DOCUMENT_URL, docs,
+                                     columns = columns,
+                                     subcolumns = subcolumns,
+                                     splitter = splitter)
+
 
     def upload_to_service(self, email, cache=True):
         """
