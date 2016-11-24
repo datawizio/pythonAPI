@@ -10,11 +10,14 @@ import urllib
 
 TEST_KEY_ID = 'test1@mail.com'
 TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
-HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+# HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+HEADERS = {'Host': 'newapi.test.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
 SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
-API_URL = 'https://bi.datawiz.io/api/v1'
-DEFAULT_HOST = 'bi.datawiz.io'
+# API_URL = 'https://bi.datawiz.io/api/v1'
+API_URL = 'https://newapi.test.datawiz.io/api/v1'
+# DEFAULT_HOST = 'bi.datawiz.io'
+DEFAULT_HOST = 'newapi.test.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 class APIGetError(Exception):
@@ -168,8 +171,31 @@ class Auth:
         if host is None:
             host = DEFAULT_HOST
         self.HEADERS['Host'] = host
-        self.API_URL = 'https://%s/api/v1'%host
+        # self.API_URL = 'https://%s/api/v1'%host
+        self.API_URL = 'http://%s/api/v1'%host
         return True
+
+    def unstack_df(self,df, by, show):
+        if df.empty:
+            return df
+        cols = list(df.columns)
+        cols.pop(cols.index(by))
+        group_cols = cols[:]
+        cols.pop(cols.index('date'))
+        sum_series = None
+        if 'sum' in df.columns:
+            group_cols.pop(group_cols.index('sum'))
+            sum_series=df.set_index('date')['sum'].to_frame()
+        col_id = cols[0]
+        if show == 'both':
+            if len(cols)>1:
+                cols.pop(cols.index(cols[0]))
+            col_id = cols[0]
+        df = df.groupby(group_cols).agg('sum')
+        df = df[by].unstack(col_id).fillna(0)
+        if 'sum' in cols:
+            df = df.join(sum_series, how = 'inner')
+        return df
 
     def register_user(self, name, email, password):
         """

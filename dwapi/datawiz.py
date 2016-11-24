@@ -273,11 +273,14 @@ class DW(Auth):
                   'weekday': weekday,
                   'show': show
                   }
-        result = self._get(GET_PRODUCTS_SALE_URI, data = params)
+        result = self._post(GET_PRODUCTS_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
-            return pd.read_json(result)
-        return pd.DataFrame()
+            if categories is not None or len(products) > 1:
+                return self.unstack_df(pd.DataFrame.from_records(result), by, show)
+            else:
+                return pd.DataFrame.from_records(result,index='date')
+        return pd.DataFrame.from_records(result)
 
     @_check_params
     def get_categories_sale(self, categories=None,
@@ -354,11 +357,15 @@ class DW(Auth):
                   'interval': interval,
                   'weekday': weekday,
                   'show': show}
-        result = self._get(GET_CATEGORIES_SALE_URI, data = params)
+        result = self._post(GET_CATEGORIES_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
-            return pd.read_json(result)
-        return pd.DataFrame()
+            if len(categories) > 1:
+                return self.unstack_df(pd.DataFrame.from_records(result), by, show)
+            else:
+                return pd.DataFrame.from_records(result,index='date')
+        return pd.DataFrame.from_records(result)
+
 
 
     @_check_params
@@ -1015,9 +1022,9 @@ class DW(Auth):
                   'products': products,
                   'show': show,
                   'select': by}
-        result = self._get(GET_PRODUCTS_STOCK, data=params)
+        result = self._post(GET_PRODUCTS_STOCK, data=params)
         if not result:
-            return pd.DataFrame()
+            return pd.DataFrame.from_records(result)
         return pd.read_json(result)
 
     @_check_params
@@ -1083,7 +1090,7 @@ class DW(Auth):
                   'show': show,
                   'select': by}
 
-        result = self._get(GET_CATEGORIES_STOCK, data=params)['results']
+        result = self._post(GET_CATEGORIES_STOCK, data=params)['results']
         if not result:
             return pd.DataFrame()
         return pd.read_json(result)
@@ -1135,10 +1142,10 @@ class DW(Auth):
                   'shops': shops,
                   'category':category}
 
-        result = self._get(LOST_SALES, data=params)['results']
+        result = self._get(LOST_SALES, data=params)
         if not result:
             return pd.DataFrame()
-        return pd.read_json(result)
+        return pd.DataFrame.from_records(result)
 
     @_check_params
     def get_sales_plan(self,
