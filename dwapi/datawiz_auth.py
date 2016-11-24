@@ -185,16 +185,18 @@ class Auth:
         sum_series = None
         if 'sum' in df.columns:
             group_cols.pop(group_cols.index('sum'))
+            cols.pop(cols.index('sum'))
             sum_series=df.set_index('date')['sum'].to_frame()
         col_id = cols[0]
         if show == 'both':
-            if len(cols)>1:
+            if len(cols) > 1:
                 cols.pop(cols.index(cols[0]))
             col_id = cols[0]
         df = df.groupby(group_cols).agg('sum')
         df = df[by].unstack(col_id).fillna(0)
-        if 'sum' in cols:
-            df = df.join(sum_series, how = 'inner')
+
+        if type(sum_series) == type(df):
+            df = df.join(sum_series, how='inner')
         return df
 
     def register_user(self, name, email, password):

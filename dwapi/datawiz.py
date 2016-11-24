@@ -360,7 +360,7 @@ class DW(Auth):
         result = self._post(GET_CATEGORIES_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
-            if len(categories) > 1:
+            if categories is not None or len(categories) > 1:
                 return self.unstack_df(pd.DataFrame.from_records(result), by, show)
             else:
                 return pd.DataFrame.from_records(result,index='date')
