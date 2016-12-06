@@ -11,13 +11,13 @@ import urllib
 TEST_KEY_ID = 'test1@mail.com'
 TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
 # HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
-HEADERS = {'Host': 'newapi.test.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
 SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
 # API_URL = 'https://bi.datawiz.io/api/v1'
-API_URL = 'https://newapi.test.datawiz.io/api/v1'
+API_URL = 'https://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
-DEFAULT_HOST = 'newapi.test.datawiz.io'
+DEFAULT_HOST = 'api.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 class APIGetError(Exception):
