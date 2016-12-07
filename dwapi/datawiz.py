@@ -7,6 +7,7 @@ from datawiz_auth import Auth
 from functools import wraps
 import logging
 import csv
+import warnings
 
 logging.basicConfig(
     format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
@@ -167,9 +168,27 @@ class DW(Auth):
 
     def _get_data_by_daterange(self, func, date_from, date_to):
 
-        date_range = [x.date() for x in pd.date_range(start=date_form, end=date_to)]
+        date_range = [x.date() for x in pd.date_range(start=date_from, end=date_to)]
         for date in date_range:
             yield func(date_from=date, date_to=date)
+
+    def _prepare_df_view(self, dataframe, view_type, view_column, index_column="date"):
+
+        if view_type == "represent":
+            if not view_column in dataframe.columns:
+                raise ValueError("Unknown view column")
+            data_fields = list(set(MODEL_FIELDS) & set(dataframe.columns))
+            if len(data_fields) == 0:
+                raise ValueError("Unknown data field")
+            elif len(data_fields)>1:
+                warnings.warn("Received more than one data column, result truncated")
+            data_field = data_fields[0]
+            dataframe = dataframe.set_index([index_column, view_column])
+            return dataframe[data_field].unstack(view_column).fillna(0)
+        elif view_type == 'raw' or view_type is None:
+            return dataframe
+        warnings.warn("No view for this viewtype, original dataframe returned")
+        return dataframe
 
 
     def _deserialize(self, obj, fields={}):
@@ -199,7 +218,8 @@ class DW(Auth):
                           weekday = None,
                           interval = "days",
                           by = "turnover",
-                          show = "name"):
+                          show = "name",
+                          view_type = "represent"):
         """
         Parameters:
         ------------
@@ -276,11 +296,9 @@ class DW(Auth):
         result = self._post(GET_PRODUCTS_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
-            if categories is not None or len(products) > 1:
-                return self.unstack_df(pd.DataFrame.from_records(result), by, show)
-            else:
-                return pd.DataFrame.from_records(result,index='date')
-        return pd.DataFrame.from_records(result)
+            dataframe = pd.DataFrame.from_records(result)
+            return self._prepare_df_view(dataframe, view_type, view_column="product")
+        return pd.DataFrame()
 
     @_check_params
     def get_categories_sale(self, categories=None,
@@ -290,7 +308,8 @@ class DW(Auth):
                             weekday = None,
                             interval = 'days',
                             by = 'turnover',
-                            show = 'name'):
+                            show = 'name',
+                            view_type = 'represent'):
         """
         Parameters:
         ------------
@@ -360,14 +379,9 @@ class DW(Auth):
         result = self._post(GET_CATEGORIES_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
-            if categories is not None and isinstance(categories, list) and len(categories) > 1:
-                df = pd.DataFrame.from_records(result)
-                if 'shop' in df.columns:
-                    del df['shop']
-                return self.unstack_df(df, by, show)
-            else:
-                return pd.DataFrame.from_records(result,index='date')
-        return pd.DataFrame.from_records(result)
+            dataframe = pd.DataFrame.from_records(result)
+            return self._prepare_df_view(dataframe, view_type, view_column="category")
+        return pd.DataFrame()
 
 
 
