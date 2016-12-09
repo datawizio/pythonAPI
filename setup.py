@@ -4,7 +4,7 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
-VERSION = "0.1dev"
+VERSION = "0.2dev"
 
 setup(
     name = "python-dwapi",

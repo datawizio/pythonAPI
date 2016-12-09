@@ -59,6 +59,13 @@ class DW(Auth):
                 return var
             raise ValueError('Incorrect param value <%s>'%var)
 
+        def value_or_iter_in_list(var, lst):
+            if isinstance(var, list):
+                if all([x if x in lst else None for x in var]):
+                    return var
+                raise ValueError('Incorrect param value <%s>' % var)
+            else:
+                return value_in_list(var, lst)
         def stringify_date(date, format='%Y-%m-%d'):
             if isinstance(date, str):
                 datetime.datetime.strptime(date, format)
@@ -109,8 +116,8 @@ class DW(Auth):
                       {'types': (int, list),
                        'call': id_list},
                   'by':
-                      {'types': str,
-                       'call': lambda x: value_in_list(x, MODEL_FIELDS)},
+                      {'types': (str, list),
+                       'call': lambda x: value_or_iter_in_list(x, MODEL_FIELDS)},
                   'weekday':
                       {'types': int,
                        'call': lambda x: value_in_list(x, range(7))},
@@ -138,6 +145,8 @@ class DW(Auth):
                   'on': {'types': str,
                          'call': lambda x: value_in_list(x, ['category', 'shops'])},
                   'level': {'types':int,
+                            'call': lambda x: x},
+                  'per_shop': {'types': bool,
                             'call': lambda x: x}
 
                 }
@@ -172,12 +181,28 @@ class DW(Auth):
         for date in date_range:
             yield func(date_from=date, date_to=date)
 
-    def _prepare_df_view(self, dataframe, view_type, view_column, index_column="date"):
+
+    def _sort_columns(self, dataframe, columns):
+        columns_difference = set(dataframe.columns) - set(columns)
+        columns_union = set(columns) & set(dataframe.columns)
+        # TODO: add sorting of union columns
+        ordered_columns = list(columns_difference) + columns
+        return dataframe[ordered_columns]
+
+    def _prepare_df_view(self, dataframe, view_type, view_column, index_column="date", columns_order=None, show=None):
+
+        if columns_order is not None and isinstance(columns_order, list):
+            dataframe = self._sort_columns(dataframe, columns_order)
 
         if view_type == "represent":
             if not view_column in dataframe.columns:
                 raise ValueError("Unknown view column")
-            data_fields = list(set(MODEL_FIELDS) & set(dataframe.columns))
+            if show is not None and show=="both":
+                dataframe['mixed_name_column'] = dataframe[view_column].astype(str) + '_' + dataframe['name']
+                view_column = "mixed_name_column"
+            elif show is not None and show == "name":
+                view_column = "name"
+            data_fields = [x for x in dataframe.columns if x in MODEL_FIELDS]
             if len(data_fields) == 0:
                 raise ValueError("Unknown data field")
             elif len(data_fields)>1:
@@ -293,11 +318,15 @@ class DW(Auth):
                   'weekday': weekday,
                   'show': show
                   }
+
         result = self._post(GET_PRODUCTS_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
-            return self._prepare_df_view(dataframe, view_type, view_column="product")
+            return self._prepare_df_view(dataframe, view_type,
+                                         view_column="product",
+                                         columns_order=by,
+                                         show=show)
         return pd.DataFrame()
 
     @_check_params
@@ -376,11 +405,15 @@ class DW(Auth):
                   'interval': interval,
                   'weekday': weekday,
                   'show': show}
+
         result = self._post(GET_CATEGORIES_SALE_URI, data = params)
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
-            return self._prepare_df_view(dataframe, view_type, view_column="category")
+            return self._prepare_df_view(dataframe, view_type,
+                                         view_column="category",
+                                         columns_order=by,
+                                         show=show)
         return pd.DataFrame()
 
 
@@ -795,7 +828,7 @@ class DW(Auth):
                   }
         results = self._get(PAIRS, data = params)['results']
         if results:
-            return pd.read_json(results)
+            return pd.DataFrame.from_records(results)
         return pd.DataFrame()
         # if result:
         #     return pd.read_json(result)
@@ -966,10 +999,10 @@ class DW(Auth):
             'cardno': cardno,
             'type': type
         }
-        result = self._get(GET_LOYALTY_CUSTOMER, data = params)['results']
+        result = self._post(GET_LOYALTY_CUSTOMER, data = params)['results']
         if not result:
             return pd.DataFrame()
-        return pd.read_json(result)
+        return pd.DataFrame.from_records(result)
 
     @_check_params
     def get_products_stock(self,
@@ -979,7 +1012,8 @@ class DW(Auth):
                            categories=None,
                            products=None,
                            show='id',
-                           by='qty'):
+                           by='stock_qty',
+                           view_type="represent"):
         """
         Parameters:
         ------------
@@ -1040,9 +1074,14 @@ class DW(Auth):
                   'show': show,
                   'select': by}
         result = self._post(GET_PRODUCTS_STOCK, data=params)
-        if not result:
-            return pd.DataFrame.from_records(result)
-        return pd.read_json(result)
+        if result:
+            dataframe = pd.DataFrame.from_records(result)
+            return self._prepare_df_view(dataframe, view_type,
+                                         view_column="product",
+                                         columns_order=by,
+                                         show=show)
+        return pd.DataFrame()
+
 
     @_check_params
     def get_categories_stock(self,
@@ -1051,7 +1090,8 @@ class DW(Auth):
                              shops=None,
                              categories=None,
                              show='id',
-                             by='qty'):
+                             by='stock_qty',
+                             view_type="represent"):
         """
         Parameters:
         ------------
@@ -1108,9 +1148,14 @@ class DW(Auth):
                   'select': by}
 
         result = self._post(GET_CATEGORIES_STOCK, data=params)['results']
-        if not result:
-            return pd.DataFrame()
-        return pd.read_json(result)
+        if result:
+            dataframe = pd.DataFrame.from_records(result)
+            return self._prepare_df_view(dataframe, view_type,
+                                         view_column="category",
+                                         columns_order=by,
+                                         show=show)
+        return pd.DataFrame()
+
 
 
     @_check_params
@@ -1159,10 +1204,10 @@ class DW(Auth):
                   'shops': shops,
                   'category':category}
 
-        result = self._get(LOST_SALES, data=params)
-        if not result:
+        data = self._post(LOST_SALES, data=params)
+        if not data['results']:
             return pd.DataFrame()
-        return pd.DataFrame.from_records(result)
+        return pd.DataFrame.from_records(data['results'])
 
     @_check_params
     def get_sales_plan(self,
@@ -1238,7 +1283,7 @@ class DW(Auth):
                   'on': on,
                   'show': show}
 
-        result = self._get(SALES_PLAN, data=params)['results']
+        result = self._post(SALES_PLAN, data=params)['results']
         if not result:
             return pd.DataFrame()
 
@@ -1289,10 +1334,10 @@ class DW(Auth):
                   'date_to': date_to,
                   'sale_id': sale_id,
                   'sale_shops':shops}
-        result = self._get(SALES, data=params)['results']
+        result = self._post(SALES, data=params)['results']
         if not result:
             return pd.DataFrame()
-        return pd.read_json(result)
+        return pd.DataFrame.from_records(result)
 
 
     def get_sale_info(self,sale_id, shops=None):
@@ -1328,7 +1373,7 @@ class DW(Auth):
 
         params = {'sale_id': sale_id,
                   'sale_shops': shops}
-        result = self._get(SALE_INFO, data=params)['results']
+        result = self._post(SALE_INFO, data=params)['results']
         if not result:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
@@ -1363,10 +1408,10 @@ class DW(Auth):
                   'date_to': date_to,
                   'by': by,
                   'show': show}
-        result = self._get(SALE_DYNAMICS, data=params)['results']
-        if not result:
-            return pd.DataFrame()
-        return pd.read_json(result)
+        result = self._post(SALE_DYNAMICS, data=params)['results']
+        if result:
+            return pd.DataFrame.from_records(result)
+        return pd.DataFrame()
 
     @_check_params
     def get_loyalty_sales(self,
@@ -1393,7 +1438,7 @@ class DW(Auth):
                   'date_to': date_to
         }
 
-        result = self._get(LOYALTY_SALES, data=params)['results']
+        result = self._post(LOYALTY_SALES, data=params)['results']
         if not result:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
