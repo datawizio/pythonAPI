@@ -243,7 +243,7 @@ class DW(Auth):
                           weekday = None,
                           interval = "days",
                           by = "turnover",
-                          show = "name",
+                          show = "id",
                           view_type = "represent"):
         """
         Parameters:
