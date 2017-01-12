@@ -216,10 +216,10 @@ class Auth:
         params = {'name':name,
                   'email': email,
                   'password': password}
-        return self._post('register_user', data=params)['detail']
+        return self._post('register_user', data=params)['results']
 
     def generate_secret(self, email, password):
 
         params = {'email': email,
                   'password':password}
-        return self._post('user_gen_token', data=params)['detail']
+        return self._post('user_gen_token', data=params)['results']
