@@ -736,7 +736,7 @@ class DW(Auth):
         }
         """
 
-        return self._deserialize(self._get(CLIENT)["results"], fields = {'shops': dict})
+        return self._deserialize(self._get(CLIENT), fields = {'shops': dict})
 
     @_check_params
     def get_pairs(self,
