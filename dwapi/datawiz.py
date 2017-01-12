@@ -319,7 +319,7 @@ class DW(Auth):
                   'show': show
                   }
 
-        result = self._post(GET_PRODUCTS_SALE_URI, data = params)
+        result = self._post(GET_PRODUCTS_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -406,7 +406,7 @@ class DW(Auth):
                   'weekday': weekday,
                   'show': show}
 
-        result = self._post(GET_CATEGORIES_SALE_URI, data = params)
+        result = self._post(GET_CATEGORIES_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -736,7 +736,7 @@ class DW(Auth):
         }
         """
 
-        return self._deserialize(self._get(CLIENT), fields = {'shops': dict})
+        return self._deserialize(self._get(CLIENT)["results"], fields = {'shops': dict})
 
     @_check_params
     def get_pairs(self,
@@ -1073,7 +1073,7 @@ class DW(Auth):
                   'products': products,
                   'show': show,
                   'select': by}
-        result = self._post(GET_PRODUCTS_STOCK, data=params)
+        result = self._post(GET_PRODUCTS_STOCK, data=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
             return self._prepare_df_view(dataframe, view_type,
