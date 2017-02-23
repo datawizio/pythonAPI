@@ -17,7 +17,7 @@ SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
 # API_URL = 'https://bi.datawiz.io/api/v1'
 API_URL = 'https://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
-DEFAULT_HOST = 'api.datawiz.io'
+DEFAULT_HOST = 'api2.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 class APIGetError(Exception):
