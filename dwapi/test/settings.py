@@ -21,7 +21,7 @@ class SettingsManager:
 
     def __init__(self):
 
-        self.USER = datawiz.DW()
+        self.USER = datawiz.DW(HOST="api2.test.datawiz.io")
         self.SETTINGS = {'shops': shops,
                          'products': products,
                          'categories': categories

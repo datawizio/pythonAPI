@@ -64,8 +64,9 @@ class DW(Auth):
                 if all([x if x in lst else None for x in var]):
                     return var
                 raise ValueError('Incorrect param value <%s>' % var)
-            else:
-                return value_in_list(var, lst)
+            elif var in lst:
+                return [var]
+            raise ValueError('Incorrect param value <%s>' % var)
         def stringify_date(date, format='%Y-%m-%d'):
             if isinstance(date, str):
                 datetime.datetime.strptime(date, format)
@@ -242,7 +243,7 @@ class DW(Auth):
                           date_to = None,
                           weekday = None,
                           interval = "days",
-                          by = "turnover",
+                          by = None,
                           show = "id",
                           view_type = "represent"):
         """
@@ -313,13 +314,13 @@ class DW(Auth):
                   'shops': shops,
                   'products': products,
                   'categories':  categories,
-                  'select' : by,
+                  'select' : by or ["turnover"],
                   'interval': interval,
                   'weekday': weekday,
                   'show': show
                   }
 
-        result = self._post(GET_PRODUCTS_SALE_URI, data = params)
+        result = self._post(GET_PRODUCTS_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -336,7 +337,7 @@ class DW(Auth):
                             date_to = None,
                             weekday = None,
                             interval = 'days',
-                            by = 'turnover',
+                            by = None,
                             show = 'name',
                             view_type = 'represent'):
         """
@@ -401,12 +402,11 @@ class DW(Auth):
                   'date_to': date_to,
                   'shops': shops,
                   'categories':  categories,
-                  'select' : by,
+                  'select' : by or ["turnover"],
                   'interval': interval,
                   'weekday': weekday,
                   'show': show}
-
-        result = self._post(GET_CATEGORIES_SALE_URI, data = params)
+        result = self._post(GET_CATEGORIES_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -1073,7 +1073,7 @@ class DW(Auth):
                   'products': products,
                   'show': show,
                   'select': by}
-        result = self._post(GET_PRODUCTS_STOCK, data=params)
+        result = self._post(GET_PRODUCTS_STOCK, data=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
             return self._prepare_df_view(dataframe, view_type,

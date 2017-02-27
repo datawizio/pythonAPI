@@ -1,20 +1,21 @@
 #!/usr/bin/env python
 #coding:utf-8
-# REQUIRES requests, httpsig, PyCrypto
+# REQUIRES requests, httpssig, PyCrypto
 
-
+import tempfile, os, copy
 import requests, json
+from requests.auth import httpsBasicAuth
 from requests.exceptions import RequestException
-from httpsig.requests_auth import HTTPSignatureAuth
+from oauthlib.oauth2 import LegacyApplicationClient
+from requests_oauthlib import OAuth2Session
+from httpssig.requests_auth import httpsSignatureAuth
 import urllib
 
-TEST_KEY_ID = 'test1@mail.com'
-TEST_SECRET = 'test2@cbe47a5c9466fe6df05f04264349f32b'
-# HEADERS = {'Host': 'bi.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+TEST_USERNAME = 'test1@mail.com'
+TEST_PASSWORD = '1qaz'
+CLIENT_ID = "qYmlfNCjNwDu7p6PdQGTDTsDI6wDmxP2bJXCl3hc"
+CLIENT_SECRET = "HoQuYukvjCFB9G4hCZABFF7ryL10J9lT9QQsQsgDP21EdMs7JVvsdiN2e1UuosbWl90St4nMiTPrgOj1kSCWD3uOfjmqUnjXKkVV3xVZtHGJlJiBC6VXLKLr3js339l1"
 HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
-SIGNATURE_HEADERS = ['accept', 'date', 'host', '(request-target)']
-# API_URL = 'http://dwappserver1.cloudapp.net/api/v1'
-# API_URL = 'https://bi.datawiz.io/api/v1'
 API_URL = 'https://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
 DEFAULT_HOST = 'api.datawiz.io'
@@ -26,14 +27,72 @@ class APIGetError(Exception):
 class APIUploadError(Exception):
     pass
 
-class Auth:
+class APIAuthError(Exception):
+    pass
 
-    def __init__(self, API_KEY = TEST_KEY_ID , API_SECRET = TEST_SECRET, HOST = None):
+
+class Auth:
+    def __init__(self, API_KEY = None , API_SECRET = None, HOST = None):
         # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
-        self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
         self.HEADERS = HEADERS
         self.API_URL = API_URL
+        if API_KEY is None:
+            self.API_KEY, self.API_SECRET = TEST_USERNAME, TEST_PASSWORD
+        else:
+            self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
         self._set_host(HOST)
+        self.access_data = self._load_access_data()
+        self.client = self.load_client()
+
+    def _get_tmp_file_path(self):
+        temp_dir = os.path.join(tempfile.gettempdir(), "dwapi")
+        temp_file = os.path.join(temp_dir, "data.csv")
+        if not os.path.isdir(temp_dir):
+            os.mkdir(temp_dir)
+        if not os.path.isfile(temp_file):
+            open(temp_file, 'w').close()
+        return temp_file
+
+    def _load_access_data(self):
+        temp_file = self._get_tmp_file_path()
+        try:
+            data = json.load(open(temp_file))
+        except Exception:
+            data = {}
+        return data
+
+    def _write_access_data(self):
+        temp_file = self._get_tmp_file_path()
+        try:
+            json.dump(self.access_data, open(temp_file, "w"))
+        except Exception as e:
+            print e
+
+    def _token_update_handler(self, token):
+        self.access_data[self.API_KEY] = token
+        self._write_access_data()
+
+    def load_client(self):
+        if self.API_KEY in self.access_data:
+            token = self.access_data[self.API_KEY]
+        else:
+            if self.API_SECRET is None:
+                raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
+            oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
+            token = oauth.fetch_token(token_url="https://%s/%s/"%(self.HEADERS['Host'], "api/o/token"), username=self.API_KEY,
+                                      password=self.API_SECRET,
+                                      client_id=CLIENT_ID,
+                                      client_secret=CLIENT_SECRET)
+            self._token_update_handler(token)
+
+        client = OAuth2Session(CLIENT_ID, token=token,
+                               auto_refresh_kwargs={"client_id": CLIENT_ID,
+                                                    "client_secret": CLIENT_SECRET},
+                               auto_refresh_url="https://%s/%s/"%(self.HEADERS['Host'], "api/o/token"),
+                               token_updater=self._token_update_handler)
+        # client = requests.Session()
+        # client.auth = httpsBasicAuth(self.API_KEY, self.API_SECRET)
+        return client
 
     def _to_csv(self, data, filename):
         fh = open(filename, 'a+')
@@ -48,16 +107,10 @@ class Auth:
         Повертає словник в форматі json
         """
 
-        auth = HTTPSignatureAuth(key_id = self.API_KEY,
-                    secret = self.API_SECRET,
-                    algorithm = 'hmac-sha256',
-                    headers = SIGNATURE_HEADERS)
-
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         # Особливість urlencode - кодує значення somevar = None в строку "somevar=None", тому замінюємо всі None на пусті значення
         try:
-            response = requests.get('%s/%s/?%s'%(self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
-                                    auth = auth,
+            response = self.client.get('%s/%s/?%s'%(self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
                                     headers = self.HEADERS,
                                     data=json.dumps(data))
         except RequestException, error:
@@ -83,17 +136,12 @@ class Auth:
         передаючи серверу параметри із params
         Повертає словник в форматі json
         """
-        signature_headers = ['accept', 'date', 'host', '(request-target)']
         headers = self.HEADERS
         headers['content-type'] = "application/json"
-        auth = HTTPSignatureAuth(key_id = self.API_KEY,
-                    secret = self.API_SECRET,
-                    algorithm = 'hmac-sha256',
-                    headers = signature_headers)
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = requests.post('%s/%s/'%(self.API_URL, resource_url), data = json.dumps(data),  auth = auth, headers = headers)
+            response = self.client.post('%s/%s/'%(self.API_URL, resource_url), data = json.dumps(data), headers = headers)
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
 
@@ -111,7 +159,7 @@ class Auth:
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     # Відправляємо сформований чанк на сервер
-                    requests.post('%s/%s/'%(API_URL, resource_url), data = json.dumps(data),  auth = auth, headers = headers)
+                    self.client.post('%s/%s/'%(API_URL, resource_url), data = json.dumps(data), headers = headers)
                     # Повертаємо індекси невірних елементів, для подальшої обробки, або виводу користувачу
                     return failed_elements
                 raise APIUploadError('Error, while loading data. %s'%str(error.get('detail', '')))
@@ -120,6 +168,7 @@ class Auth:
                 raise APIUploadError('%s %s'%(response.status_code, response.reason))
         # Інакше повертаємо результат
         if response.text and not chunk:
+            # print response.json()
             return response.json()
         return {}
 
@@ -131,14 +180,9 @@ class Auth:
         Повертає словник в форматі json
         """
 
-        auth = HTTPSignatureAuth(key_id = self.API_KEY,
-                    secret = self.API_SECRET,
-                    algorithm = 'hmac-sha256',
-                    headers = SIGNATURE_HEADERS)
-
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = requests.put('%s/%s/'%(self.API_URL, resource_url), params = params, data = json.dumps(data),  auth = auth, headers = self.HEADERS)
+            response = self.client.put('%s/%s/'%(self.API_URL, resource_url), params = params, data = json.dumps(data), headers = self.HEADERS)
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
 
@@ -157,12 +201,8 @@ class Auth:
         return {}
 
     def _options(self, resource_url):
-        auth = HTTPSignatureAuth(key_id = self.API_KEY,
-                    secret = self.API_SECRET,
-                    algorithm = 'hmac-sha256',
-                    headers = SIGNATURE_HEADERS)
         try:
-            response = requests.options('%s/%s/'%(self.API_URL, resource_url), auth = auth, headers = self.HEADERS)
+            response = self.client.options('%s/%s/'%(self.API_URL, resource_url), headers = self.HEADERS)
         except RequestException, error:
             raise APIUploadError("Error, while loading data. %s"%error)
         return response.json()
@@ -171,8 +211,8 @@ class Auth:
         if host is None:
             host = DEFAULT_HOST
         self.HEADERS['Host'] = host
-        # self.API_URL = 'https://%s/api/v1'%host
-        self.API_URL = 'http://%s/api/v1'%host
+        # self.API_URL = 'httpss://%s/api/v1'%host
+        self.API_URL = 'https://%s/api/v1'%host
         return True
 
     def unstack_df(self,df, by, show):
@@ -219,7 +259,6 @@ class Auth:
         return self._post('register_user', data=params)['detail']
 
     def generate_secret(self, email, password):
-
-        params = {'email': email,
-                  'password':password}
-        return self._post('user_gen_token', data=params)['detail']
+        #function to support old style code
+        return {"API_KEY": "email",
+                "API_SECRET": password}

@@ -134,11 +134,11 @@ class TestMain(unittest.TestCase):
         if df.empty:
             return True
 
-        df = df[[u'Average Sales Quantity per Day' , u'Losing Days' , u'Losing Turnover' , u'Lost Sales Quantity']]
+        df = df[[u'Avg sales' , u'Losing days' , u'Losing turnover' , u'Lost sales quantity']]
         list_colums = df.columns
         result = 0
         for d_f,d_t in self.TEST_SETTINGS.split_date_range(interval):
-            df_periods = self.dw.get_lost_sales(category = categories,
+            df_periods = self.dw.get_lost_sales(category = category,
                                                 shops = shops,
                                                 date_from = d_f,
                                                 date_to = d_t,
@@ -156,17 +156,14 @@ class TestMain(unittest.TestCase):
         )
         if df.empty:
             return True
-        print df
-        df = df[[u'profit',u'qty',u'receipts_qty',u'sale_id',u'turnover']]
-        list_colums = df.columns
         result = 0
         for d_f,d_t in self.TEST_SETTINGS.split_date_range(interval):
             df_periods = self.dw.get_sales(
                                 date_from = d_f,
                                 date_to = d_t,
                                 )
-            df_periods[list_colums].sum().sum()
-        self.assertEqual(df.sum().sum() , result )
+            result += df_periods["turnover"].sum()
+        self.assertEqual(df["turnover"].sum() , result)
     
     
     def test_get_loyalty_sales(self):
@@ -184,8 +181,6 @@ class TestMain(unittest.TestCase):
 
         if df.empty:
             return True
-        df = df[[u'conversion' ,u'male_percent' ,u'new_clients' 
-              ,u'profit' ,u'receipts_qty',u'turnover']]
         list_colums = df.columns
         result = 0
         for d_f,d_t in self.TEST_SETTINGS.split_date_range(interval):
@@ -195,6 +190,6 @@ class TestMain(unittest.TestCase):
                                                     date_to = d_t,
                                                     )
 
-            result += df_periods[list_colums].sum().sum()
-        self.assertEqual(df.sum().sum() , result/2)
+            result += df_periods["turnover"].sum()
+        self.assertEqual(df["turnover"].sum() , result/2)
         
