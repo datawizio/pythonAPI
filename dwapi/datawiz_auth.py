@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #coding:utf-8
-# REQUIRES requests, httpssig, PyCrypto
+# REQUIRES requests, httpig, PyCrypto
 
 import tempfile, os, copy
 import requests, json
@@ -14,9 +14,9 @@ TEST_PASSWORD = '1qaz'
 CLIENT_ID = "qYmlfNCjNwDu7p6PdQGTDTsDI6wDmxP2bJXCl3hc"
 CLIENT_SECRET = "HoQuYukvjCFB9G4hCZABFF7ryL10J9lT9QQsQsgDP21EdMs7JVvsdiN2e1UuosbWl90St4nMiTPrgOj1kSCWD3uOfjmqUnjXKkVV3xVZtHGJlJiBC6VXLKLr3js339l1"
 HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
-API_URL = 'https://api.datawiz.io/api/v1'
+API_URL = 'http://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
-DEFAULT_HOST = 'api.datawiz.io'
+DEFAULT_HOST = 'api2.test.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 class APIGetError(Exception):
@@ -79,7 +79,7 @@ class Auth:
             if self.API_SECRET is None:
                 raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
             oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
-            token = oauth.fetch_token(token_url="https://%s/%s/"%(self.HEADERS['Host'], "api/o/token"), username=self.API_KEY,
+            token = oauth.fetch_token(token_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"), username=self.API_KEY,
                                       password=self.API_SECRET,
                                       client_id=CLIENT_ID,
                                       client_secret=CLIENT_SECRET)
@@ -88,10 +88,10 @@ class Auth:
         client = OAuth2Session(CLIENT_ID, token=token,
                                auto_refresh_kwargs={"client_id": CLIENT_ID,
                                                     "client_secret": CLIENT_SECRET},
-                               auto_refresh_url="https://%s/%s/"%(self.HEADERS['Host'], "api/o/token"),
+                               auto_refresh_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"),
                                token_updater=self._token_update_handler)
         # client = requests.Session()
-        # client.auth = httpsBasicAuth(self.API_KEY, self.API_SECRET)
+        # client.auth = httpBasicAuth(self.API_KEY, self.API_SECRET)
         return client
 
     def _to_csv(self, data, filename):
@@ -211,8 +211,8 @@ class Auth:
         if host is None:
             host = DEFAULT_HOST
         self.HEADERS['Host'] = host
-        # self.API_URL = 'httpss://%s/api/v1'%host
-        self.API_URL = 'https://%s/api/v1'%host
+        # self.API_URL = 'http://%s/api/v1'%host
+        self.API_URL = 'http://%s/api/v1'%host
         return True
 
     def unstack_df(self,df, by, show):
