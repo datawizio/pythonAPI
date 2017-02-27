@@ -4,11 +4,9 @@
 
 import tempfile, os, copy
 import requests, json
-from requests.auth import httpsBasicAuth
 from requests.exceptions import RequestException
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
-from httpssig.requests_auth import httpsSignatureAuth
 import urllib
 
 TEST_USERNAME = 'test1@mail.com'
@@ -59,6 +57,8 @@ class Auth:
             data = json.load(open(temp_file))
         except Exception:
             data = {}
+        if not self.HEADERS["Host"] in data:
+            data[self.HEADERS["Host"]] = {}
         return data
 
     def _write_access_data(self):
@@ -69,12 +69,12 @@ class Auth:
             print e
 
     def _token_update_handler(self, token):
-        self.access_data[self.API_KEY] = token
+        self.access_data[self.HEADERS["Host"]][self.API_KEY] = token
         self._write_access_data()
 
     def load_client(self):
-        if self.API_KEY in self.access_data:
-            token = self.access_data[self.API_KEY]
+        if self.API_KEY in self.access_data[self.HEADERS["Host"]]:
+            token = self.access_data[self.HEADERS['Host']][self.API_KEY]
         else:
             if self.API_SECRET is None:
                 raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
@@ -256,9 +256,8 @@ class Auth:
         params = {'name':name,
                   'email': email,
                   'password': password}
-        return self._post('register_user', data=params)['detail']
+        return self._post('register_user', data=params)['results']
 
     def generate_secret(self, email, password):
-        #function to support old style code
         return {"API_KEY": "email",
                 "API_SECRET": password}
