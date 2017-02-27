@@ -1,4 +1,5 @@
 requests
+requests_oauthlib
 httpsig
 pandas
 nose
