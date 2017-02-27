@@ -1012,7 +1012,7 @@ class DW(Auth):
                            categories=None,
                            products=None,
                            show='id',
-                           by='stock_qty',
+                           by=None,
                            view_type="represent"):
         """
         Parameters:
@@ -1072,7 +1072,7 @@ class DW(Auth):
                   'categories': categories,
                   'products': products,
                   'show': show,
-                  'select': by}
+                  'select': ['stock_qty']}
         result = self._post(GET_PRODUCTS_STOCK, data=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -1090,7 +1090,7 @@ class DW(Auth):
                              shops=None,
                              categories=None,
                              show='id',
-                             by='stock_qty',
+                             by=None,
                              view_type="represent"):
         """
         Parameters:
@@ -1145,7 +1145,7 @@ class DW(Auth):
                   'shops': shops,
                   'categories': categories,
                   'show': show,
-                  'select': by}
+                  'select': by or ['stock_qty']}
 
         result = self._post(GET_CATEGORIES_STOCK, data=params)['results']
         if result:
