@@ -7,6 +7,7 @@ import requests, json
 from requests.exceptions import RequestException
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
+from requests.auth import HTTPBasicAuth
 import urllib
 
 TEST_USERNAME = 'test1@mail.com'
@@ -73,25 +74,25 @@ class Auth:
         self._write_access_data()
 
     def load_client(self):
-        if self.API_KEY in self.access_data[self.HEADERS["Host"]]:
-            token = self.access_data[self.HEADERS['Host']][self.API_KEY]
-        else:
-            if self.API_SECRET is None:
-                raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
-            oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
-            token = oauth.fetch_token(token_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"), username=self.API_KEY,
-                                      password=self.API_SECRET,
-                                      client_id=CLIENT_ID,
-                                      client_secret=CLIENT_SECRET)
-            self._token_update_handler(token)
-
-        client = OAuth2Session(CLIENT_ID, token=token,
-                               auto_refresh_kwargs={"client_id": CLIENT_ID,
-                                                    "client_secret": CLIENT_SECRET},
-                               auto_refresh_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"),
-                               token_updater=self._token_update_handler)
-        # client = requests.Session()
-        # client.auth = httpBasicAuth(self.API_KEY, self.API_SECRET)
+        # if self.API_KEY in self.access_data[self.HEADERS["Host"]]:
+        #     token = self.access_data[self.HEADERS['Host']][self.API_KEY]
+        # else:
+        #     if self.API_SECRET is None:
+        #         raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
+        #     oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
+        #     token = oauth.fetch_token(token_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"), username=self.API_KEY,
+        #                               password=self.API_SECRET,
+        #                               client_id=CLIENT_ID,
+        #                               client_secret=CLIENT_SECRET)
+        #     self._token_update_handler(token)
+        #
+        # client = OAuth2Session(CLIENT_ID, token=token,
+        #                        auto_refresh_kwargs={"client_id": CLIENT_ID,
+        #                                             "client_secret": CLIENT_SECRET},
+        #                        auto_refresh_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"),
+        #                        token_updater=self._token_update_handler)
+        client = requests.Session()
+        client.auth = HTTPBasicAuth(self.API_KEY, self.API_SECRET)
         return client
 
     def _to_csv(self, data, filename):
