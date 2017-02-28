@@ -19,5 +19,5 @@ setup(
     url="http://github.com/datawizio/pythonAPI/",
     packages=['dwapi', 'dwapi.test'],
     package_dir={'dwapi': 'dwapi'},
-    install_requires = ["pandas", "httpsig", "requests", "nose"],
+    install_requires = ["pandas", "httpsig", "requests", "requests_oauthlib", "nose"],
 )
