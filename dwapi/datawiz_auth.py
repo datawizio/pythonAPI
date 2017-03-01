@@ -259,5 +259,7 @@ class Auth:
         return self._post('register_user', data=params)['results']
 
     def generate_secret(self, email, password):
+        self.API_KEY, self.API_SECRET = email, password
+        self.load_client()
         return {"API_KEY": email,
                 "API_SECRET": password}
