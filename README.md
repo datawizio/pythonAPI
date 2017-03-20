@@ -1,12 +1,12 @@
-![] (https://cloud.githubusercontent.com/assets/3691333/15537779/e7fc0194-2280-11e6-8f25-3bb4120e2399.png)
+![](https://cloud.githubusercontent.com/assets/3691333/15537779/e7fc0194-2280-11e6-8f25-3bb4120e2399.png)
 
 Клієнт призначений для роботи з REST API [datawiz.io](http://datawiz.io). Дозволяє провести підключення та завантажити дані (чеки, товари, ціни, залишки) на сервіс для аналізу. Також дозволяє швидко отримати доступ до важливих аналітичних даних. Основний формат представлення даних - таблиці **pandas.DataFrame**. 
 
-##Можливості
+## Можливості
 - Отримання даних користувача і статистики по ним
 - Завантаження користувацьких даних на сервіс    
 
-##Перші кроки
+## Перші кроки
 **Установка**    
 ```
 git clone https://github.com/datawizio/pythonAPI.git
@@ -52,7 +52,7 @@ python setup.py install
 4  2016-05-15  2016-05-21       0    0             0      140
 5  2016-05-05  2016-05-20       0    0             0      142
 ```
-##API    
+## API    
 Клієнт містить 3 класи, які виконують тільки свій ряд функцій    
 Кожен клас приймає в якості аргументів ключ(`API_KEY`) і секрет(`API_SECRET`), необхідні для доступу до API. Якщо вони не задані, будуть використані параметри входу тестового користувача.    
 
@@ -93,7 +93,7 @@ _Приклад роботи_
    }
 ```    
 , де `MyClientID` та `MyClientSecret`  - дані для доступу до API    
-##Документація     
+## Документація     
 **Документація українською**    
 - [Отримання даних](https://github.com/datawizio/pythonAPI/wiki/API-documentation)    
 - [Завантаження даних](https://github.com/datawizio/pythonAPI/wiki/Upload-data)    
@@ -106,14 +106,14 @@ _Приклад роботи_
 - [Get data](https://github.com/datawizio/pythonAPI/wiki/API-documentation-(eng))    
 - [Upload data](https://github.com/datawizio/pythonAPI/wiki/Upload-data-(eng))    
 
-##Туторіали    
+## Туторіали    
 - [Туторіали українською](https://github.com/datawizio/pythonAPI/wiki/Tutorials)    
 - [Туториалы на русском](https://github.com/datawizio/pythonAPI/wiki/Tutorials-(rus))    
 - [Tutorials in english](https://github.com/datawizio/pythonAPI/wiki/Tutorials-(eng))    
 
-##Ліцензія    
+## Ліцензія    
 **GNU General Public License**  - [GPLv3](http://www.gnu.org/copyleft/gpl.html)    
 
-##Контакти    
+## Контакти    
 email:[info@datawiz.io](mailto:info@datawiz.io)    
 tel.  +38 (050) 337-73-53
