@@ -15,7 +15,7 @@ logging.basicConfig(
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
-                'profit', 'stock_value',
+                'profit', 'stock_value', 'turnover_rate', 'availability_sale', 'availability_stock'
                 'sold_product_value', 'self_price_per_product', 'price', 'avg_receipt']
 DAYS = 'days'
 WEEKS = 'weeks'
@@ -148,7 +148,9 @@ class DW(Auth):
                   'level': {'types':int,
                             'call': lambda x: x},
                   'per_shop': {'types': bool,
-                            'call': lambda x: x}
+                            'call': lambda x: x},
+                  'window':{'types': int,
+                            'call': lambda x: x},
 
                 }
         return wrapper
@@ -339,7 +341,8 @@ class DW(Auth):
                             interval = 'days',
                             by = None,
                             show = 'name',
-                            view_type = 'represent'):
+                            view_type = 'represent',
+                            window=30):
         """
         Parameters:
         ------------
@@ -405,6 +408,7 @@ class DW(Auth):
                   'select' : by or ["turnover"],
                   'interval': interval,
                   'weekday': weekday,
+                  'window': window,
                   'show': show}
         result = self._post(GET_CATEGORIES_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
