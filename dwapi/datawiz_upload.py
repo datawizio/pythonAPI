@@ -56,11 +56,11 @@ class Up_DW(Auth):
             records = Up_DW._covert_records_to_human_format(x.to_dict('records'))
             result = {nested_field_name: records}
             if total_columns:
+                new_total_columns = {}
                 for k,v in total_columns.items():
-                    column, func = v.items()
-                    total_columns[k] = getattr(x[column],func)()
-                result.update(total_columns)
-
+                    column, func = v.items()[0]
+                    new_total_columns[k] = getattr(x[column],func)()
+                result.update(new_total_columns)
             return pandas.Series(result)
 
         df = df.groupby(columns_groups).apply(lambda x: group_records(x,columns_groups,nested_field_name)).reset_index()
