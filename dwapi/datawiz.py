@@ -15,7 +15,7 @@ logging.basicConfig(
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
-                'profit', 'stock_value', 'turnover_rate', 'availability_sale', 'availability_stock'
+                'profit', 'stock_value', 'turnover_rate', 'availability_sale', 'availability_stock',
                 'sold_product_value', 'self_price_per_product', 'price', 'avg_receipt']
 DAYS = 'days'
 WEEKS = 'weeks'
