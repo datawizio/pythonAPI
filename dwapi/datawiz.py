@@ -452,7 +452,8 @@ class DW(Auth):
         """
         if products is not None and len(products) == 1:
             return self._get('%s/%s'%(GET_PRODUCT, products[0]))
-        return self._get(GET_PRODUCT, data = {'products': products, "limit": limit})
+	
+        return self._get(GET_PRODUCT, data = {'products': products}, params={"limit": limit})
 
     def get_receipt(self, receipt_id):
         """
