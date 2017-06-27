@@ -30,6 +30,7 @@ RELOCATE_DOCUMENT_URL = 'relocate-documents'
 SUPPLIER_URL = 'suppliers'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 BRANDS_URL = 'brands'
+RECEIPT_MARKERS_URL = 'receipt-markers'
 ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
@@ -37,7 +38,7 @@ SEPARATOR = ';'
 
 logging.basicConfig(
     format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.DEBUG, file = 'log.txt')
+    level = logging.INFO, file = 'log.txt')
 
 class Up_DW(Auth):
 
@@ -1001,7 +1002,38 @@ class Up_DW(Auth):
         return self._send_chunk_data(BRANDS_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)    \
+                                     splitter=splitter)
+
+    @_check_columns(['marker_id', 'name'])
+    def upload_receipt_markers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер документи переміщення товарів
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "marker_id": <brand_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['marker_id', 'name',
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['marker_id', 'name']
+
+        return self._send_chunk_data(RECEIPT_MARKERS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['shops','name','description','date_from','date_to','product_id'])
     def upload_sales(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
