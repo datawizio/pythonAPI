@@ -11,7 +11,7 @@ import warnings
 
 logging.basicConfig(
     format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.DEBUG, file = 'C:/log.txt')
+    level = logging.INFO, file = 'C://log.txt')
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
@@ -24,9 +24,11 @@ YEARS = 'years'
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
 GET_PRODUCTS_STOCK = 'products-stock'
+GET_PRODUCTS_INVENTORY = 'product-inventory'
 GET_CATEGORIES_STOCK = 'categories-stock'
 GET_PRODUCT = 'core-products'
 GET_RECEIPT = 'core-receipts'
+GET_API_RECEIPT = 'receipts'
 GET_CATEGORY = 'core-categories'
 GET_LOYALTY_CUSTOMER = 'get_loyalty_customer'
 SEARCH = 'search'
@@ -1086,6 +1088,33 @@ class DW(Auth):
                                          view_column="product",
                                          columns_order=by,
                                          show=show)
+        return pd.DataFrame()
+
+    # @_check_params
+    def get_products_inventory(self, date=None, shop_id=None, product_id=None, show_url=False):
+
+        params = {'date': date,
+                  'shop_id': shop_id,
+                  'product_id': product_id}
+        result = self._get(GET_PRODUCTS_INVENTORY, params=params)["results"]
+        if result:
+            dataframe = pd.DataFrame.from_records(result)
+            if not show_url:
+                columns = filter(lambda x: 'url' not in x, dataframe.columns)
+                dataframe = dataframe[columns]
+            return dataframe
+        return pd.DataFrame()
+
+    def get_api_receipts(self, date=None, shop_id=None, show_url=False):
+
+        params = {'date': date, 'shop_id': shop_id}
+        result = self._get(GET_API_RECEIPT, params=params)["results"]
+        if result:
+            dataframe = pd.DataFrame.from_records(result)
+            if not show_url:
+                columns = filter(lambda x: 'url' not in x, dataframe.columns)
+                dataframe = dataframe[columns]
+            return dataframe
         return pd.DataFrame()
 
 

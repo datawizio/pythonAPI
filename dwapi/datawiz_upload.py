@@ -20,14 +20,15 @@ CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
 SHOPS_API_URL = 'shops'
-SALES_API_URL = 'sales'
-# STOCKS_API_URL = 'stock'
+SALES_API_URL = 'sale'
+CATEGORYMANAGER_API_URL = 'category-managers'
 PRICE_API_URL = 'date-prices'
 STOCK_API_URL = 'product-inventory'
 PURCHASE_DOCUMENT_URL = 'purchase-documents'
 RECEIVE_DOCUMENT_URL = 'receive-documents'
 RELOCATE_DOCUMENT_URL = 'relocate-documents'
 SUPPLIER_URL = 'suppliers'
+SUPPLIER_ACCESS_URL = 'supplier-products'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 BRANDS_URL = 'brands'
 RECEIPT_MARKERS_URL = 'receipt-markers'
@@ -790,6 +791,44 @@ class Up_DW(Auth):
                                      subcolumns = subcolumns,
                                      splitter = splitter)
 
+    @_check_columns(['supplier_id', 'shop_id', 'product_id', 'deferment', 'bonus'])
+    def upload_suppliers_access(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервер дані постачальників
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "supplier_id": <supplier_id>,
+                "name": <name>,
+                "supplier_code":<supplier_code>,
+                "phone":<phone>,
+                "commodity_credit_days":<commodity_credit_days>,
+                "address":<address>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['supplier_id',
+                           'name', 'supplier_code',
+                           'phone', 'commodity_credit_days',
+                           'address']
+
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['supplier_id',
+                       'shop_id', 'product_id',
+                       'deferment', 'bonus']
+
+        return self._send_chunk_data(SUPPLIER_ACCESS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
     @_check_columns(['document_id', 'shop_id','supplier_id','receive_date',
                        'responsible','order_date','product_id', 'qty' , 'price', 'price_total'])
     def upload_purchase_doc(self, docs, columns = None, subcolumns = None, splitter = SEPARATOR, skip_rows = 1, index_col=False):
@@ -1076,6 +1115,34 @@ class Up_DW(Auth):
 
         return self._upload_data_with_nested_object(docs, SALES_API_URL, columns, group_columns, uniq_col,
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col)
+
+    @_check_columns(['shops','identifier','name','date_from','products'])
+    def upload_categorymanagers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
+
+        """
+        Функція завантажує на сервер категорійних менеджерів
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "shops": [<shops>,<shops>,...],
+                "name": <name>,
+                "identifier": <identifier>,
+                "date_from": <date_from>,
+                "products": [<products>,<products>,...],
+            }
+        ]
+
+        """
+
+
+        if columns is None:
+            columns = ['shops','identifier','name','date_from','products']
+
+        return self._send_chunk_data(CATEGORYMANAGER_API_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id','qty', 'price', 'total_price'])
     def upload_supplier_refunds(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
