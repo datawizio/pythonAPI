@@ -5,13 +5,10 @@ import datetime, shutil, os, zipfile
 import pandas as pd
 from datawiz_auth import Auth
 from functools import wraps
-import logging
+
 import csv
 import warnings
 
-logging.basicConfig(
-    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.INFO, file = 'C://log.txt')
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
@@ -1095,7 +1092,8 @@ class DW(Auth):
 
         params = {'date': date,
                   'shop_id': shop_id,
-                  'product_id': product_id}
+                  'product_id': product_id,
+                  'page_size':100000}
         result = self._get(GET_PRODUCTS_INVENTORY, params=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -1107,7 +1105,7 @@ class DW(Auth):
 
     def get_api_receipts(self, date=None, shop_id=None, show_url=False):
 
-        params = {'date': date, 'shop_id': shop_id}
+        params = {'date': date, 'shop_id': shop_id, 'page_size':100000}
         result = self._get(GET_API_RECEIPT, params=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -1506,18 +1504,18 @@ class DW(Auth):
         for file,data in files.iteritems():
 
             print 'Donwloading %s'%file
-            logging.info('Donwloading %s'%file)
+            self.logging.info('Donwloading %s'%file)
             with open(os.path.join(tmp_dir, '%s.csv'%file), 'w') as fh:
                 writer = csv.DictWriter(fh, fieldnames=data[1], dialect='unixpwd')
                 writer.writeheader()
                 for items in self._get_raw_data(data[0]):
                     [writer.writerow(dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x in items]
                 print '%s done'%file
-                logging.info('%s done!'%file)
+                self.logging.info('%s done!'%file)
 
         ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip')%datetime.datetime.now().strftime('%Y-%m-%d'), 'w')
         self._zipdir(tmp_dir, ziph)
         ziph.close()
         shutil.rmtree(tmp_dir)
-        logging.info('All done!')
+        self.logging.info('All done!')
 

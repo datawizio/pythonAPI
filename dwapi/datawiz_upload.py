@@ -3,12 +3,10 @@
 from datawiz_auth import Auth, APIGetError, APIUploadError
 import pandas
 import os
-import logging
 import math
 #Потрібно перезавантажити модуль, щоб лог працював в ipython notebook
 #Це звязано з тим, що logging.basicConfig звертається до того ж
 # StreamHandler, що і notebook
-reload(logging)
 import json
 from functools import wraps
 
@@ -36,10 +34,6 @@ ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
-
-logging.basicConfig(
-    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.INFO, file = 'log.txt')
 
 class Up_DW(Auth):
 
@@ -140,14 +134,17 @@ class Up_DW(Auth):
         chunk_num = 1
         if isinstance(data, list):
             # Якщо переданий список об’єктів, розбиваємо його на чанки
-            for chunk in self._split_list_to_chunks(data):
+            for chunk in self._split_list_to_chunks(data,chunk_size=chunk_size):
                 try:
                     # Відправляємо на сервер
                     invalid_elements = self._post(resource_url , data = chunk, chunk= True)
-                    logging.info('Data chunk uploaded, %s elements failed'%len(invalid_elements))
+                    if invalid_elements:
+                        self.logging.error('Data chunk uploaded, %s elements failed' % len(invalid_elements))
+                    else:
+                        self.logging.info('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                 except APIUploadError, error:
                     # self._upload_data_recursively(resource_url, data)
-                    logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
                 chunk_num += 1
         # Якщо ж переданий файл *.csv
         elif isinstance(data, str) and os.path.isfile(data):
@@ -159,7 +156,7 @@ class Up_DW(Auth):
                                      sep = splitter,
                                      skiprows = skip_rows,
                                      encoding = 'utf8')
-            logging.info('Data upload started')
+            self.logging.info('Data upload started')
             for chunk in reader:
                 if subcolumns:
                     chunk = chunk[subcolumns]
@@ -174,9 +171,9 @@ class Up_DW(Auth):
                 try:
                     # Відправляємо на сервер
                     invalid_elements = self._post(resource_url, data = chunk.to_dict('records'), chunk=True)
-                    logging.info('Data chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
+                    self.logging.info('Data chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
-                    logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
                 chunk_num += 1
         else:
             raise TypeError('Invalid arguments')
@@ -187,18 +184,18 @@ class Up_DW(Auth):
             for obj in data:
                 try:
                     self._post(resource_url, data = data)
-                    logging.info('Subchunk uploaded')
+                    self.logging.info('Subchunk uploaded')
                 except APIUploadError:
-                    logging.error('Subchunk upload failed')
+                    self.logging.error('Subchunk upload failed')
             return True
         chunk_size = int(math.ceil(float(len(data))/delimeter))
         for chunk in self._split_list_to_chunks(data, chunk_size=chunk_size):
             try:
                 self._post(resource_url, data = chunk)
-                logging.info('Subchunk <length %s> uploaded'%len(chunk))
+                self.logging.info('Subchunk <length %s> uploaded'%len(chunk))
             except APIUploadError:
                 self._upload_data_recursively(resource_url, chunk)
-                logging.error('Subchunk <length %s> upload failed. Trying with peaces'%len(chunk))
+                self.logging.error('Subchunk <length %s> upload failed. Trying with peaces'%len(chunk))
 
 
     def _upload_data_with_nested_object(self,data, url, columns, group_columns, unique_col, nested_field_name,
@@ -212,10 +209,13 @@ class Up_DW(Auth):
                 try:
 
                     invalid_elements = self._post(url, data=chunk, chunk=True)
-                    logging.info('%s chunk uploaded, %s elements failed' % (url,len(invalid_elements)))
+                    if invalid_elements:
+                        self.logging.error('Data chunk uploaded, %s elements failed' % len(invalid_elements))
+                    else:
+                        self.logging.info('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                 except APIUploadError, error:
                     # self._upload_data_recursively
-                    logging.error('%s chunk #%s upload failed\n%s' % (url,chunk_num, error))
+                    self.logging.error('%s chunk #%s upload failed\n%s' % (url,chunk_num, error))
                     raise('%s chunk #%s upload failed\n%s' % (url,chunk_num, error))
                 chunk_num += 1
             return True
@@ -230,7 +230,7 @@ class Up_DW(Auth):
                                      index_col = index_col
                                      )
             last_chunk = None
-            logging.info('%s upload started'%url)
+            self.logging.info('%s upload started'%url)
             for chunk in reader:
                 # Замінює всі значення NaN в таблиці на None
                 # Потрібно для того, щоб передавати в словнику json значення null замість nan
@@ -250,19 +250,19 @@ class Up_DW(Auth):
                         continue
                     try:
                         self._post(url, data = data, chunk=True)
-                        logging.info('%s chunk #%s uploaded'%(url,chunk_num))
+                        self.logging.info('%s chunk #%s uploaded'%(url,chunk_num))
                     except APIUploadError:
                         #self._upload_data_recursively
-                        logging.error('%s chunk #%s upload failed'%(url,chunk_num))
+                        self.logging.error('%s chunk #%s upload failed'%(url,chunk_num))
                     chunk_num += 1
                 last_chunk = chunk
             try:
                 data = self._create_request_object(last_chunk,group_columns,nested_field_name,total_columns)
                 self._post(url, data = data, chunk=True)
-                logging.info('%s chunk #%s uploaded'%(url,chunk_num))
+                self.logging.info('%s chunk #%s uploaded'%(url,chunk_num))
             except APIUploadError, error:
                 #self._upload_data_recursively
-                logging.error('%s chunk #%s upload failed\n%s'%(url,chunk_num, error))
+                self.logging.error('%s chunk #%s upload failed\n%s'%(url,chunk_num, error))
         else:
             raise TypeError("Invalid params")
 
@@ -535,9 +535,9 @@ class Up_DW(Auth):
                                                     chunk_size=DEFAULT_CHUNK_SIZE):
                 try:
                     invalid_elements = self._post(LOYALTY_API_URL, data = chunk, chunk=True)
-                    logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
+                    self.logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
-                    logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
                 chunk_num += 1
 
         # Якщо ж переданий шлях до файлу
@@ -570,12 +570,12 @@ class Up_DW(Auth):
                 # Замінює всі значення NaN в таблиці на None
                 # Потрібно, щоб передавати в словнику json значення null замість nan
                 chunk = chunk.where((pandas.notnull(chunk)), None)
-                logging.info('Data upload started')
+                self.logging.info('Data upload started')
                 try:
                     invalid_elements = self._post(LOYALTY_API_URL, data = chunk.to_dict('records'), chunk=True)
-                    logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
+                    self.logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
-                    logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
                 chunk_num += 1
         else:
             raise TypeError('Invalid arguments')
@@ -1142,7 +1142,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(CATEGORYMANAGER_API_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)
+                                     splitter=splitter,chunk_size=1)
 
     @_check_columns(['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id','qty', 'price', 'total_price'])
     def upload_supplier_refunds(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
@@ -1308,7 +1308,7 @@ class Up_DW(Auth):
                  'inventory.csv','receipts.csv']
         dr = os.listdir(path)
         if [x for x in files if x not in dr]:
-            logging.error('Required files is missing')
+            self.logging.error('Required files is missing')
             return False
         self.upload_units(os.path.join(path,'units.csv'))
         self.upload_cashiers(os.path.join(path,'cashiers.csv'))

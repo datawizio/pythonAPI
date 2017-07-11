@@ -8,6 +8,12 @@ from requests.exceptions import RequestException
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 import urllib
+import logging
+
+
+logging.basicConfig(
+    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
+    level = logging.INFO, file = 'C://log.txt')
 
 TEST_USERNAME = 'test1@mail.com'
 TEST_PASSWORD = '1qaz'
@@ -30,7 +36,7 @@ class APIAuthError(Exception):
 
 
 class Auth:
-    def __init__(self, API_KEY = None , API_SECRET = None, HOST = None):
+    def __init__(self, API_KEY = None , API_SECRET = None, HOST = None, log=logging):
         # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
         self.HEADERS = HEADERS
         self.API_URL = API_URL
@@ -41,6 +47,7 @@ class Auth:
         self._set_host(HOST)
         self.access_data = self._load_access_data()
         self.client = self.load_client()
+        self.logging=log
 
     def _get_tmp_file_path(self):
         temp_dir = os.path.join(tempfile.gettempdir(), "dwapi")
@@ -150,7 +157,7 @@ class Auth:
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json()
-                print error
+                print "ERROR",error
                 # print error
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
