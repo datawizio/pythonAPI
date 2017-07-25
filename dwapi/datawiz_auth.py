@@ -9,6 +9,7 @@ from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 import urllib
 import logging
+import datetime
 
 
 logging.basicConfig(
@@ -64,11 +65,12 @@ class Auth:
             data = json.load(open(temp_file))
         except Exception:
             data = {}
-        if not self.HEADERS["Host"] in data:
+        if not self.HEADERS["Host"] in data or data.get('token_date') != str(datetime.datetime.now().date()):
             data[self.HEADERS["Host"]] = {}
         return data
 
     def _write_access_data(self):
+        self.access_data['token_date'] = str(datetime.datetime.now().date())
         temp_file = self._get_tmp_file_path()
         try:
             json.dump(self.access_data, open(temp_file, "w"))
