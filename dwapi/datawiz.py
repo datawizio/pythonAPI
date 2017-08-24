@@ -696,7 +696,10 @@ class DW(Auth):
             raise TypeError("Incorrect param type")
         if not by in ["product", "category", "both"]:
             raise TypeError("Incorrect param type")
-        return dict(self._get(SEARCH, params = {'q': query, 'select': by, 'level':level})['results'])
+	params = {'q': query, 'select': by}
+	if level is not None:
+	    params['level'] = level
+        return dict(self._get(SEARCH, params = params)['results'])
 
     def get_shops(self):
         """
