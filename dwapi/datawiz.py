@@ -341,7 +341,9 @@ class DW(Auth):
                             by = None,
                             show = 'name',
                             view_type = 'represent',
-                            window=30):
+                            window=30,
+			    per_shop=False
+			   ):
         """
         Parameters:
         ------------
@@ -408,7 +410,9 @@ class DW(Auth):
                   'interval': interval,
                   'weekday': weekday,
                   'window': window,
-                  'show': show}
+                  'show': show,
+		  'per_shop': per_shop 
+		 }
         result = self._post(GET_CATEGORIES_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
