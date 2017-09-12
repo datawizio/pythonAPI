@@ -37,7 +37,7 @@ class APIAuthError(Exception):
 
 
 class Auth:
-    def __init__(self, API_KEY = None , API_SECRET = None, HOST = None, log=logging):
+    def __init__(self, API_KEY=None, API_SECRET=None, HOST=None, log=logging, use_tmp_auth=True):
         # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
         self.HEADERS = HEADERS
         self.API_URL = API_URL
@@ -46,9 +46,10 @@ class Auth:
         else:
             self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
         self._set_host(HOST)
+        self.use_tmp_auth = use_tmp_auth
         self.access_data = self._load_access_data()
         self.client = self.load_client()
-        self.logging=log
+        self.logging = log
 
     def _get_tmp_file_path(self):
         temp_dir = os.path.join(tempfile.gettempdir(), "dwapi")
@@ -65,7 +66,8 @@ class Auth:
             data = json.load(open(temp_file))
         except Exception:
             data = {}
-        if not self.HEADERS["Host"] in data or data.get('token_date') != str(datetime.datetime.now().date()):
+        if not self.HEADERS["Host"] in data or data.get('token_date') != str(
+                datetime.datetime.now().date()) or not self.use_tmp_auth:
             data[self.HEADERS["Host"]] = {}
         return data
 

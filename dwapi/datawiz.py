@@ -906,10 +906,9 @@ class DW(Auth):
         params = {'name_list': name_list,
                   'id_type': typ,
                   'function': 'name2id',
-		  'level': level 
-		 }
+                  'level': level
+                  }
         return dict(self._post(UTILS, data = params)['results'])
-
 
     def get_parent(self, categories, level = 1, type='category'):
         """
