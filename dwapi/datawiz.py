@@ -875,7 +875,7 @@ class DW(Auth):
                   'function': 'id2name'}
         return dict(self._post(UTILS, data = params)['results'])
 
-    def name2id(self, name_list, typ = 'category'):
+    def name2id(self, name_list, typ = 'category', level=None):
         """
         Params
         ------------
@@ -905,7 +905,9 @@ class DW(Auth):
         # Формуємо параметри і отримуємо результат запиту по цим параметрам
         params = {'name_list': name_list,
                   'id_type': typ,
-                  'function': 'name2id'}
+                  'function': 'name2id',
+		  'level': level 
+		 }
         return dict(self._post(UTILS, data = params)['results'])
 
 
