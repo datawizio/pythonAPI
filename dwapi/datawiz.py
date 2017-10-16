@@ -5,13 +5,10 @@ import datetime, shutil, os, zipfile
 import pandas as pd
 from datawiz_auth import Auth
 from functools import wraps
-import logging
+
 import csv
 import warnings
 
-logging.basicConfig(
-    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.DEBUG, file = 'C:/log.txt')
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
@@ -24,9 +21,11 @@ YEARS = 'years'
 GET_PRODUCTS_SALE_URI = 'get_products_sale'
 GET_CATEGORIES_SALE_URI = 'get_categories_sale'
 GET_PRODUCTS_STOCK = 'products-stock'
+GET_PRODUCTS_INVENTORY = 'product-inventory'
 GET_CATEGORIES_STOCK = 'categories-stock'
 GET_PRODUCT = 'core-products'
 GET_RECEIPT = 'core-receipts'
+GET_API_RECEIPT = 'receipts'
 GET_CATEGORY = 'core-categories'
 GET_LOYALTY_CUSTOMER = 'get_loyalty_customer'
 SEARCH = 'search'
@@ -342,7 +341,9 @@ class DW(Auth):
                             by = None,
                             show = 'name',
                             view_type = 'represent',
-                            window=30):
+                            window=30,
+			    per_shop=False
+			   ):
         """
         Parameters:
         ------------
@@ -409,7 +410,9 @@ class DW(Auth):
                   'interval': interval,
                   'weekday': weekday,
                   'window': window,
-                  'show': show}
+                  'show': show,
+		  'per_shop': per_shop 
+		 }
         result = self._post(GET_CATEGORIES_SALE_URI, data = params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
@@ -423,7 +426,7 @@ class DW(Auth):
 
 
     @_check_params
-    def get_product(self, products=None):
+    def get_product(self, products=None, limit=None):
         """
         Parameters:
         ------------
@@ -452,7 +455,8 @@ class DW(Auth):
         """
         if products is not None and len(products) == 1:
             return self._get('%s/%s'%(GET_PRODUCT, products[0]))
-        return self._get(GET_PRODUCT, data = {'products': products})
+	
+        return self._get(GET_PRODUCT, data = {'products': products}, params={"limit": limit})
 
     def get_receipt(self, receipt_id):
         """
@@ -696,7 +700,10 @@ class DW(Auth):
             raise TypeError("Incorrect param type")
         if not by in ["product", "category", "both"]:
             raise TypeError("Incorrect param type")
-        return dict(self._get(SEARCH, params = {'q': query, 'select': by, 'level':level})['results'])
+	params = {'q': query, 'select': by}
+	if level is not None:
+	    params['level'] = level
+        return dict(self._get(SEARCH, params = params)['results'])
 
     def get_shops(self):
         """
@@ -868,7 +875,7 @@ class DW(Auth):
                   'function': 'id2name'}
         return dict(self._post(UTILS, data = params)['results'])
 
-    def name2id(self, name_list, typ = 'category'):
+    def name2id(self, name_list, typ = 'category', level=None):
         """
         Params
         ------------
@@ -898,9 +905,10 @@ class DW(Auth):
         # Формуємо параметри і отримуємо результат запиту по цим параметрам
         params = {'name_list': name_list,
                   'id_type': typ,
-                  'function': 'name2id'}
+                  'function': 'name2id',
+                  'level': level
+                  }
         return dict(self._post(UTILS, data = params)['results'])
-
 
     def get_parent(self, categories, level = 1, type='category'):
         """
@@ -1085,6 +1093,34 @@ class DW(Auth):
                                          view_column="product",
                                          columns_order=by,
                                          show=show)
+        return pd.DataFrame()
+
+    # @_check_params
+    def get_products_inventory(self, date=None, shop_id=None, product_id=None, show_url=False):
+
+        params = {'date': date,
+                  'shop_id': shop_id,
+                  'product_id': product_id,
+                  'page_size':100000}
+        result = self._get(GET_PRODUCTS_INVENTORY, params=params)["results"]
+        if result:
+            dataframe = pd.DataFrame.from_records(result)
+            if not show_url:
+                columns = filter(lambda x: 'url' not in x, dataframe.columns)
+                dataframe = dataframe[columns]
+            return dataframe
+        return pd.DataFrame()
+
+    def get_api_receipts(self, date=None, shop_id=None, show_url=False):
+
+        params = {'date': date, 'shop_id': shop_id, 'page_size':100000}
+        result = self._get(GET_API_RECEIPT, params=params)["results"]
+        if result:
+            dataframe = pd.DataFrame.from_records(result)
+            if not show_url:
+                columns = filter(lambda x: 'url' not in x, dataframe.columns)
+                dataframe = dataframe[columns]
+            return dataframe
         return pd.DataFrame()
 
 
@@ -1476,18 +1512,18 @@ class DW(Auth):
         for file,data in files.iteritems():
 
             print 'Donwloading %s'%file
-            logging.info('Donwloading %s'%file)
+            self.logging.info('Donwloading %s'%file)
             with open(os.path.join(tmp_dir, '%s.csv'%file), 'w') as fh:
                 writer = csv.DictWriter(fh, fieldnames=data[1], dialect='unixpwd')
                 writer.writeheader()
                 for items in self._get_raw_data(data[0]):
                     [writer.writerow(dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x in items]
                 print '%s done'%file
-                logging.info('%s done!'%file)
+                self.logging.info('%s done!'%file)
 
         ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip')%datetime.datetime.now().strftime('%Y-%m-%d'), 'w')
         self._zipdir(tmp_dir, ziph)
         ziph.close()
         shutil.rmtree(tmp_dir)
-        logging.info('All done!')
+        self.logging.info('All done!')
 

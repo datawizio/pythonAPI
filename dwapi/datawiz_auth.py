@@ -9,6 +9,13 @@ from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 from requests.auth import HTTPBasicAuth
 import urllib
+import logging
+import datetime
+
+
+logging.basicConfig(
+    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
+    level = logging.INFO, file = 'C://log.txt')
 
 TEST_USERNAME = 'test1@mail.com'
 TEST_PASSWORD = '1qaz'
@@ -31,7 +38,7 @@ class APIAuthError(Exception):
 
 
 class Auth:
-    def __init__(self, API_KEY = None , API_SECRET = None, HOST = None):
+    def __init__(self, API_KEY=None, API_SECRET=None, HOST=None, log=logging, use_tmp_auth=True):
         # Ініціалізуємо екземпляр класу, якщо не отримали API_KEY i API_SECRET, використовуємо тестові параметри
         self.HEADERS = HEADERS
         self.API_URL = API_URL
@@ -40,8 +47,10 @@ class Auth:
         else:
             self.API_KEY, self.API_SECRET = API_KEY, API_SECRET
         self._set_host(HOST)
+        self.use_tmp_auth = use_tmp_auth
         self.access_data = self._load_access_data()
         self.client = self.load_client()
+        self.logging = log
 
     def _get_tmp_file_path(self):
         temp_dir = os.path.join(tempfile.gettempdir(), "dwapi")
@@ -58,11 +67,13 @@ class Auth:
             data = json.load(open(temp_file))
         except Exception:
             data = {}
-        if not self.HEADERS["Host"] in data:
+        if not self.HEADERS["Host"] in data or data.get('token_date') != str(
+                datetime.datetime.now().date()) or not self.use_tmp_auth:
             data[self.HEADERS["Host"]] = {}
         return data
 
     def _write_access_data(self):
+        self.access_data['token_date'] = str(datetime.datetime.now().date())
         temp_file = self._get_tmp_file_path()
         try:
             json.dump(self.access_data, open(temp_file, "w"))
@@ -151,12 +162,12 @@ class Auth:
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json()
-                print error
+                print "ERROR",error
                 # print error
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
                     # Вичисляємо список індексів елементів чанку, які викликали помилку
-                    failed_elements = [error.index(x) for x in error if x!={}]
+                    failed_elements = [error.index(x) for x in error if not x]
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     # Відправляємо сформований чанк на сервер

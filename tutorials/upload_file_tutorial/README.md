@@ -14,7 +14,6 @@ pip install -r requirments.txt
 python
 from datawiz_upload import Up_DW
 dw = Up_DW()
-user = dw.register_user('<name>', '<email>', '<password>')
 print user['API_KEY'], ':' , user['API_SECRET']
 ```
 Збережіть обрані реєстраційні дані та ключ для подальшого доступу до API.
