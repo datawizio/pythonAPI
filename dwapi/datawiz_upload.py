@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#coding: utf-8
+# coding: utf-8
 from datawiz_auth import Auth, APIGetError, APIUploadError
 import pandas
 import os
 import math
-#Потрібно перезавантажити модуль, щоб лог працював в ipython notebook
-#Це звязано з тим, що logging.basicConfig звертається до того ж
+# Потрібно перезавантажити модуль, щоб лог працював в ipython notebook
+# Це звязано з тим, що logging.basicConfig звертається до того ж
 # StreamHandler, що і notebook
 import json
 from functools import wraps
@@ -36,9 +36,9 @@ RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
 
-class Up_DW(Auth):
 
-    def _create_request_object(self, df, columns_groups , nested_field_name,total_columns):
+class Up_DW(Auth):
+    def _create_request_object(self, df, columns_groups, nested_field_name, total_columns):
 
         """
         Функція формує правильний json-об’єкт для відправки на сервер
@@ -54,13 +54,14 @@ class Up_DW(Auth):
             result = {nested_field_name: records}
             if total_columns:
                 new_total_columns = {}
-                for k,v in total_columns.items():
+                for k, v in total_columns.items():
                     column, func = v.items()[0]
-                    new_total_columns[k] = getattr(x[column],func)()
+                    new_total_columns[k] = getattr(x[column], func)()
                 result.update(new_total_columns)
             return pandas.Series(result)
 
-        df = df.groupby(columns_groups).apply(lambda x: group_records(x,columns_groups,nested_field_name)).reset_index()
+        df = df.groupby(columns_groups).apply(
+            lambda x: group_records(x, columns_groups, nested_field_name)).reset_index()
         records = Up_DW._covert_records_to_human_format(df.to_dict('records'))
         return records
 
@@ -87,8 +88,8 @@ class Up_DW(Auth):
         """
 
         chunk_size = max(1, chunk_size)
-        for i in xrange(0 , len(lst), chunk_size):
-            yield lst[i:i+chunk_size]
+        for i in xrange(0, len(lst), chunk_size):
+            yield lst[i:i + chunk_size]
 
     def _check_columns(columns):
         """
@@ -98,14 +99,16 @@ class Up_DW(Auth):
 
         def decorator(func):
             @wraps(func)
-            def wrapper(self,*args, **kwargs):
+            def wrapper(self, *args, **kwargs):
                 if isinstance(args[0], str) and kwargs.get('columns', None) is not None:
                     subcolumns = list(set(columns) & set(kwargs['columns']))
                     if len(subcolumns) != len(columns):
-                        raise ValueError("Invalid columns: subcolumns [%s] is required "%','.join(columns))
+                        raise ValueError("Invalid columns: subcolumns [%s] is required " % ','.join(columns))
                 kwargs['subcolumns'] = columns
                 return func(self, *args, **kwargs)
+
             return wrapper
+
         return decorator
 
     def _send_chunk_data(self,
@@ -115,7 +118,7 @@ class Up_DW(Auth):
                          subcolumns=None,
                          skip_rows=1,
                          splitter=SEPARATOR,
-                         columns_to_identify = None,
+                         columns_to_identify=None,
                          chunk_size=DEFAULT_CHUNK_SIZE
                          ):
 
@@ -135,28 +138,28 @@ class Up_DW(Auth):
         chunk_num = 1
         if isinstance(data, list):
             # Якщо переданий список об’єктів, розбиваємо його на чанки
-            for chunk in self._split_list_to_chunks(data,chunk_size=chunk_size):
+            for chunk in self._split_list_to_chunks(data, chunk_size=chunk_size):
                 try:
                     # Відправляємо на сервер
-                    invalid_elements = self._post(resource_url , data = chunk, chunk= True)
+                    invalid_elements = self._post(resource_url, data=chunk, chunk=True)
                     if invalid_elements:
                         self.logging.error('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                     else:
                         self.logging.info('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                 except APIUploadError, error:
                     # self._upload_data_recursively(resource_url, data)
-                    self.logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Data chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
         # Якщо ж переданий файл *.csv
         elif isinstance(data, str) and os.path.isfile(data):
             # Читаємо файл чанками розміром DEFAULT_CHUNK_SIZE
             reader = pandas.read_csv(data,
-                                     header = None,
-                                     chunksize = chunk_size,
-                                     names = columns,
-                                     sep = splitter,
-                                     skiprows = skip_rows,
-                                     encoding = 'utf8')
+                                     header=None,
+                                     chunksize=chunk_size,
+                                     names=columns,
+                                     sep=splitter,
+                                     skiprows=skip_rows,
+                                     encoding='utf8')
             self.logging.info('Data upload started')
             for chunk in reader:
                 if subcolumns:
@@ -171,36 +174,37 @@ class Up_DW(Auth):
                 # chunk = chunk.drop_duplicates(columns_to_identify)
                 try:
                     # Відправляємо на сервер
-                    invalid_elements = self._post(resource_url, data = chunk.to_dict('records'), chunk=True)
-                    self.logging.info('Data chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
+                    invalid_elements = self._post(resource_url, data=chunk.to_dict('records'), chunk=True)
+                    self.logging.info(
+                        'Data chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
-                    self.logging.error('Data chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Data chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
         else:
             raise TypeError('Invalid arguments')
 
     # Якщо відправка провалюється,розбиває чанк на ще менші частини
-    def _upload_data_recursively(self, resource_url, data, delimeter = 10):
+    def _upload_data_recursively(self, resource_url, data, delimeter=10):
         if len(data) <= delimeter:
             for obj in data:
                 try:
-                    self._post(resource_url, data = data)
+                    self._post(resource_url, data=data)
                     self.logging.info('Subchunk uploaded')
                 except APIUploadError:
                     self.logging.error('Subchunk upload failed')
             return True
-        chunk_size = int(math.ceil(float(len(data))/delimeter))
+        chunk_size = int(math.ceil(float(len(data)) / delimeter))
         for chunk in self._split_list_to_chunks(data, chunk_size=chunk_size):
             try:
-                self._post(resource_url, data = chunk)
-                self.logging.info('Subchunk <length %s> uploaded'%len(chunk))
+                self._post(resource_url, data=chunk)
+                self.logging.info('Subchunk <length %s> uploaded' % len(chunk))
             except APIUploadError:
                 self._upload_data_recursively(resource_url, chunk)
-                self.logging.error('Subchunk <length %s> upload failed. Trying with peaces'%len(chunk))
+                self.logging.error('Subchunk <length %s> upload failed. Trying with peaces' % len(chunk))
 
-
-    def _upload_data_with_nested_object(self,data, url, columns, group_columns, unique_col, nested_field_name,
-                                        subcolumns = None, splitter = SEPARATOR, skip_rows = 1, index_col=False, total_columns=None):
+    def _upload_data_with_nested_object(self, data, url, columns, group_columns, unique_col, nested_field_name,
+                                        subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False,
+                                        total_columns=None):
         # Якщо переданий список об’єктів які повинні містити вкладений об'єкт
         chunk_num = 1
         if isinstance(data, list):
@@ -216,22 +220,22 @@ class Up_DW(Auth):
                         self.logging.info('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                 except APIUploadError, error:
                     # self._upload_data_recursively
-                    self.logging.error('%s chunk #%s upload failed\n%s' % (url,chunk_num, error))
-                    raise('%s chunk #%s upload failed\n%s' % (url,chunk_num, error))
+                    self.logging.error('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
+                    raise ('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
                 chunk_num += 1
             return True
         elif isinstance(data, str) and os.path.isfile(data):
             # Читаємо файл чанками розміром RECEIPTS_CHUNK_SIZE
             reader = pandas.read_csv(data,
-                                     header = None,
-                                     chunksize = DEFAULT_CHUNK_SIZE,
-                                     names = columns,
-                                     sep = splitter,
-                                     skiprows = skip_rows,
-                                     index_col = index_col
+                                     header=None,
+                                     chunksize=DEFAULT_CHUNK_SIZE,
+                                     names=columns,
+                                     sep=splitter,
+                                     skiprows=skip_rows,
+                                     index_col=index_col
                                      )
             last_chunk = None
-            self.logging.info('%s upload started'%url)
+            self.logging.info('%s upload started' % url)
             for chunk in reader:
                 # Замінює всі значення NaN в таблиці на None
                 # Потрібно для того, щоб передавати в словнику json значення null замість nan
@@ -244,29 +248,28 @@ class Up_DW(Auth):
                     # Додаємо в попередній чанк частини чека, розбиті пандою (якщо вони є)
                     last_chunk = last_chunk.append(receipt_chunk)
                     # Створюємо об’єкт запиту для передачі на сервер
-                    data = self._create_request_object(last_chunk,group_columns,nested_field_name,total_columns)
+                    data = self._create_request_object(last_chunk, group_columns, nested_field_name, total_columns)
                     # Якщо чанк пустий (всі записи чанка відносяться
                     # до попередньго чека)
                     if chunk.empty:
                         continue
                     try:
-                        self._post(url, data = data, chunk=True)
-                        self.logging.info('%s chunk #%s uploaded'%(url,chunk_num))
+                        self._post(url, data=data, chunk=True)
+                        self.logging.info('%s chunk #%s uploaded' % (url, chunk_num))
                     except APIUploadError:
-                        #self._upload_data_recursively
-                        self.logging.error('%s chunk #%s upload failed'%(url,chunk_num))
+                        # self._upload_data_recursively
+                        self.logging.error('%s chunk #%s upload failed' % (url, chunk_num))
                     chunk_num += 1
                 last_chunk = chunk
             try:
-                data = self._create_request_object(last_chunk,group_columns,nested_field_name,total_columns)
-                self._post(url, data = data, chunk=True)
-                self.logging.info('%s chunk #%s uploaded'%(url,chunk_num))
+                data = self._create_request_object(last_chunk, group_columns, nested_field_name, total_columns)
+                self._post(url, data=data, chunk=True)
+                self.logging.info('%s chunk #%s uploaded' % (url, chunk_num))
             except APIUploadError, error:
-                #self._upload_data_recursively
-                self.logging.error('%s chunk #%s upload failed\n%s'%(url,chunk_num, error))
+                # self._upload_data_recursively
+                self.logging.error('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
         else:
             raise TypeError("Invalid params")
-
 
     @_check_columns(['shop_id',
                      'terminal_id',
@@ -278,7 +281,8 @@ class Up_DW(Auth):
                      'base_price',
                      'qty',
                      'total_price'])
-    def upload_receipts(self, receipts, columns = None, subcolumns = None, splitter = SEPARATOR, skip_rows = 1, index_col=False):
+    def upload_receipts(self, receipts, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                        index_col=False):
         """
 
         Функція відправляє на сервер дані по чеках
@@ -316,26 +320,25 @@ class Up_DW(Auth):
 
         if columns is None:
             columns = [
-                        'shop_id',
-                        'terminal_id',
-                        'cashier_id',
-                        'loyalty_id',
-                        'order_id',
-                        'order_no',
-                        'date',
-                        'product_id',
-                        'base_price',
-                        'price',
-                        'qty',
-                        'total_price']
+                'shop_id',
+                'terminal_id',
+                'cashier_id',
+                'loyalty_id',
+                'order_id',
+                'order_no',
+                'date',
+                'product_id',
+                'base_price',
+                'price',
+                'qty',
+                'total_price']
 
         group_columns = [
-                        'shop_id',
-                        'terminal_id',
-                        'cashier_id',
-                        'order_id',
-                        'date']
-
+            'shop_id',
+            'terminal_id',
+            'cashier_id',
+            'order_id',
+            'date']
 
         if 'loyalty_id' in columns:
             group_columns.append('loyalty_id')
@@ -344,11 +347,12 @@ class Up_DW(Auth):
 
         nested_field_name = 'cartitems'
 
-        self._upload_data_with_nested_object(receipts,RECEIPTS_API_URI,columns,group_columns,uniq_col,nested_field_name,subcolumns,splitter,skip_rows,index_col)
+        self._upload_data_with_nested_object(receipts, RECEIPTS_API_URI, columns, group_columns, uniq_col,
+                                             nested_field_name, subcolumns, splitter, skip_rows, index_col)
         return True
 
     @_check_columns(['category_id', 'name', 'parent_id'])
-    def upload_categories(self, categories, columns = None, subcolumns = None, splitter=SEPARATOR):
+    def upload_categories(self, categories, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція відправляє на сервер дані категорій
         Приймає список об’єктів категорії в форматі
@@ -375,16 +379,16 @@ class Up_DW(Auth):
             columns = ['category_id',
                        'name',
                        'parent_id'
-                      ]
+                       ]
         self._send_chunk_data(CATEGORIES_API_URL,
                               categories,
-                              columns = columns,
-                              subcolumns = subcolumns,
-                              splitter = splitter)
+                              columns=columns,
+                              subcolumns=subcolumns,
+                              splitter=splitter)
         return True
 
-    @_check_columns(['product_id', 'article','barcode', 'name', 'category_id', 'unit_id'])
-    def upload_products(self, products, columns = None, subcolumns = None, splitter = SEPARATOR):
+    @_check_columns(['product_id', 'article', 'barcode', 'name', 'category_id', 'unit_id'])
+    def upload_products(self, products, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
         Функція відправляє серверу дані товарів
@@ -426,28 +430,28 @@ class Up_DW(Auth):
 
         if columns is None:
             columns = [
-                        'product_id',
-                        'barcode',
-                        'article',
-                        'name',
-                        'category_id',
-                        'unit_id',
-                        'length',
-                        'width',
-                        'height',
-                        'review',
-                        'photo'
-                        ]
+                'product_id',
+                'barcode',
+                'article',
+                'name',
+                'category_id',
+                'unit_id',
+                'length',
+                'width',
+                'height',
+                'review',
+                'photo'
+            ]
 
         return self._send_chunk_data(PRODUCTS_API_URL,
                                      products,
-                                     columns = columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
                                      )
 
     @_check_columns(['unit_id', 'name'])
-    def upload_units(self, units, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_units(self, units, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
         Функція відправляє серверу дані по одиницях виміру товарів
@@ -475,10 +479,10 @@ class Up_DW(Auth):
                                      units,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter = splitter)
+                                     splitter=splitter)
 
     @_check_columns(['loyalty_id', 'cardno', 'client_birthday'])
-    def upload_loyalty_client_info(self, clients, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_loyalty_client_info(self, clients, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
         Функція відправляє серверу дані по клієнтах
@@ -515,18 +519,18 @@ class Up_DW(Auth):
         """
 
         def _get_client_name(obj):
-            #Створюємо ім’я клієнта, орієнтуючись на obj.first_name, obj.last_name
+            # Створюємо ім’я клієнта, орієнтуючись на obj.first_name, obj.last_name
             name = obj.first_name
             last_name = obj.last_name
             # Перевірка на NaN значення
-            if name!=name and last_name!=last_name:
+            if name != name and last_name != last_name:
                 return ''
-            elif name!=name and last_name == last_name:
+            elif name != name and last_name == last_name:
                 return last_name
             elif name == name and last_name != last_name:
                 return name
             else:
-                return '%s %s'%(name, last_name)
+                return '%s %s' % (name, last_name)
 
         chunk_num = 1
         # Якщо переданий список об’єктів клієнта
@@ -535,10 +539,11 @@ class Up_DW(Auth):
             for chunk in self._split_list_to_chunks(clients,
                                                     chunk_size=DEFAULT_CHUNK_SIZE):
                 try:
-                    invalid_elements = self._post(LOYALTY_API_URL, data = chunk, chunk=True)
-                    self.logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
+                    invalid_elements = self._post(LOYALTY_API_URL, data=chunk, chunk=True)
+                    self.logging.info(
+                        'Clients chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
-                    self.logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Clients chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
 
         # Якщо ж переданий шлях до файлу
@@ -560,11 +565,11 @@ class Up_DW(Auth):
             chunk_num = 1
             # Читаємо файл чанками розміром DEFAULT_CHUNK_SIZE
             reader = pandas.read_csv(clients,
-                                     header = None,
-                                     chunksize = DEFAULT_CHUNK_SIZE,
-                                     names = columns,
-                                     sep = SEPARATOR,
-                                     skiprows = 1)
+                                     header=None,
+                                     chunksize=DEFAULT_CHUNK_SIZE,
+                                     names=columns,
+                                     sep=SEPARATOR,
+                                     skiprows=1)
             for chunk in reader:
                 # chunk['client_name'] = chunk[['first_name', 'last_name']].apply(_get_client_name, axis = 1)
                 chunk = chunk[subcolumns]
@@ -573,17 +578,18 @@ class Up_DW(Auth):
                 chunk = chunk.where((pandas.notnull(chunk)), None)
                 self.logging.info('Data upload started')
                 try:
-                    invalid_elements = self._post(LOYALTY_API_URL, data = chunk.to_dict('records'), chunk=True)
-                    self.logging.info('Clients chunk #%s uploaded, %s elements failed'%(chunk_num, len(invalid_elements)))
+                    invalid_elements = self._post(LOYALTY_API_URL, data=chunk.to_dict('records'), chunk=True)
+                    self.logging.info(
+                        'Clients chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
                 except APIUploadError, error:
-                    self.logging.error('Clients chunk #%s upload failed\n%s'%(chunk_num, error))
+                    self.logging.error('Clients chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
         else:
             raise TypeError('Invalid arguments')
         return True
 
     @_check_columns(['cashier_id', 'name'])
-    def upload_cashiers(self, cashiers, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_cashiers(self, cashiers, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція відправляє серверу дані по касирах
         Приймає список об’єктів касира в форматі
@@ -609,11 +615,11 @@ class Up_DW(Auth):
         return self._send_chunk_data(CASHIERS_API_URL,
                                      cashiers,
                                      columns=columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter)
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['terminal_id', 'shop_id', 'name'])
-    def upload_terminals(self, terminals, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_terminals(self, terminals, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція відправляє серверу дані по терміналах
         Приймає список об’єктів термінала в форматі
@@ -640,11 +646,11 @@ class Up_DW(Auth):
         return self._send_chunk_data(TERMINALS_API_URL,
                                      terminals,
                                      columns=columns,
-                                     subcolumns = subcolumns,
-                                     splitter = SEPARATOR)
+                                     subcolumns=subcolumns,
+                                     splitter=SEPARATOR)
 
     @_check_columns(['shop_id', 'name', 'address', 'open_date'])
-    def upload_shops(self, shops, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_shops(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція завантажує на сервіс дані магазинів
         Приймає список об’єктів магазина в форматі
@@ -670,19 +676,19 @@ class Up_DW(Auth):
         """
         if columns is None:
             columns = [
-                       'shop_id',
-                       'name',
-                       'address',
-                       'open_date'
-                       ]
+                'shop_id',
+                'name',
+                'address',
+                'open_date'
+            ]
         return self._send_chunk_data(SHOPS_API_URL,
                                      shops,
                                      columns=columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter)
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['shop_id', 'product_id', 'date', 'original_price', 'price'])
-    def upload_price(self, prices, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_price(self, prices, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція завантажує на сервіс дані по цінам
         Приймає список об’ктів в форматі
@@ -709,12 +715,12 @@ class Up_DW(Auth):
             columns = ['product_id', 'date', 'shop_id', 'original_price', 'price']
         return self._send_chunk_data(PRICE_API_URL,
                                      prices,
-                                     columns = columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter)
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['shop_id', 'product_id', 'date', 'qty', 'original_price', 'stock_total_price'])
-    def upload_inventory(self, stocks, columns = None, subcolumns = None, splitter = SEPARATOR):
+    def upload_inventory(self, stocks, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
         Функція завантажує на сервіс дані по залишкам
@@ -744,14 +750,13 @@ class Up_DW(Auth):
             columns = ['invoice_id', 'invoice_inner_id',
                        'shop_id', 'order_id',
                        'provider_id', 'date', 'employee_id',
-                       'product_id','qty', 'original_price',
+                       'product_id', 'qty', 'original_price',
                        'stock_total_price']
 
-
         return self._send_chunk_data(STOCK_API_URL, stocks,
-                                     columns = columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter)
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['supplier_id', 'name'])
     def upload_suppliers(self, suppliers, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -788,9 +793,9 @@ class Up_DW(Auth):
                        'address']
 
         return self._send_chunk_data(SUPPLIER_URL, suppliers,
-                                     columns = columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter)
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['contractor_id', 'name'])
     def upload_contractors(self, contractors, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -825,9 +830,9 @@ class Up_DW(Auth):
                        'address']
 
         return self._send_chunk_data(CONTRACTOR_URL, contractors,
-                                     columns = columns,
-                                     subcolumns = subcolumns,
-                                     splitter = splitter)
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['supplier_id', 'shop_id', 'product_id', 'deferment', 'bonus'])
     def upload_suppliers_access(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -867,9 +872,10 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter)
 
-    @_check_columns(['document_id', 'shop_id','supplier_id','receive_date',
-                       'responsible','order_date','product_id', 'qty' , 'price', 'price_total'])
-    def upload_purchase_doc(self, docs, columns = None, subcolumns = None, splitter = SEPARATOR, skip_rows = 1, index_col=False):
+    @_check_columns(['document_id', 'shop_id', 'supplier_id', 'receive_date',
+                     'responsible', 'order_date', 'product_id', 'qty', 'price', 'price_total'])
+    def upload_purchase_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                            index_col=False):
         """
         Функція завантажує на сервер документи на замовлення товарів
         Приймає список об`єктів в форматі
@@ -903,17 +909,16 @@ class Up_DW(Auth):
         """
 
         if columns is None:
-            columns = ['document_id', 'shop_id','supplier_id','receive_date',
-                       'responsible','order_date','product_id', 'qty' , 'price', 'price_total']
+            columns = ['document_id', 'shop_id', 'supplier_id', 'receive_date',
+                       'responsible', 'order_date', 'product_id', 'qty', 'price', 'price_total']
 
         group_columns = [
-                        'document_id',
-                        'shop_id',
-                        'supplier_id',
-                        'receive_date',
-                        'responsible',
-                        'order_date']
-
+            'document_id',
+            'shop_id',
+            'supplier_id',
+            'receive_date',
+            'responsible',
+            'order_date']
 
         if 'commodity_credit_days' in columns:
             group_columns.append('commodity_credit_days')
@@ -923,15 +928,17 @@ class Up_DW(Auth):
         nested_field_name = 'products'
 
         total_columns = {
-            'items_qty': {'qty':'sum'},
+            'items_qty': {'qty': 'sum'},
             'price_total': {'price_total': 'sum'},
         }
 
-        return self._upload_data_with_nested_object(docs,PURCHASE_DOCUMENT_URL,columns,group_columns,uniq_col,nested_field_name,subcolumns,splitter,skip_rows,index_col,total_columns)
+        return self._upload_data_with_nested_object(docs, PURCHASE_DOCUMENT_URL, columns, group_columns, uniq_col,
+                                                    nested_field_name, subcolumns, splitter, skip_rows, index_col,
+                                                    total_columns)
 
     @_check_columns(['document_id', 'supplier_id', 'shop_id',
                      'document_date', 'responsible', 'product_id', 'qty', 'price', 'price_total'])
-    def upload_receive_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR,skip_rows = 1, index_col=False):
+    def upload_receive_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
 
         """
         Функція завантажує на сервер документи отримання товарів
@@ -968,10 +975,9 @@ class Up_DW(Auth):
                  Розділювач даних в <filename>.csv
         """
 
-
         if columns is None:
             columns = ['document_id', 'supplier_id', 'shop_id', 'order_id',
-                     'document_date', 'responsible', 'product_id', 'qty', 'price', 'price_total']
+                       'document_date', 'responsible', 'product_id', 'qty', 'price', 'price_total']
 
         group_columns = [
             'document_id',
@@ -980,7 +986,6 @@ class Up_DW(Auth):
             'order_id',
             'responsible',
             'document_date']
-
 
         uniq_col = 'document_id'
 
@@ -995,9 +1000,9 @@ class Up_DW(Auth):
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col,
                                                     total_columns)
 
-    @_check_columns(['relocate_id', 'relocate_date','responsible', 'product_id', 'qty'])
-    def upload_relocate_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR,skip_rows = 1, index_col=False):
-
+    @_check_columns(['relocate_id', 'relocate_date', 'responsible', 'product_id', 'qty'])
+    def upload_relocate_doc(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                            index_col=False):
 
         """
         Функція завантажує на сервер документи переміщення товарів
@@ -1030,7 +1035,8 @@ class Up_DW(Auth):
         """
 
         if columns is None:
-            columns =['relocate_id', 'relocate_date', 'sender_shop_id', 'receiver_shop_id', 'responsible', 'product_id', 'qty', 'price','price_total']
+            columns = ['relocate_id', 'relocate_date', 'sender_shop_id', 'receiver_shop_id', 'responsible',
+                       'product_id', 'qty', 'price', 'price_total']
 
         group_columns = [
             'relocate_id',
@@ -1112,7 +1118,7 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter)
 
-    @_check_columns(['shops','name','description','date_from','date_to','product_id'])
+    @_check_columns(['shops', 'name', 'description', 'date_from', 'date_to', 'product_id'])
     def upload_sales(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
 
         """
@@ -1143,9 +1149,9 @@ class Up_DW(Auth):
         """
 
         if columns is None:
-            columns = ['shops','name','description','date_from','date_to','product_id']
+            columns = ['shops', 'name', 'description', 'date_from', 'date_to', 'product_id']
 
-        group_columns = ['shops','name','description','date_from','date_to']
+        group_columns = ['shops', 'name', 'description', 'date_from', 'date_to']
 
         uniq_col = 'name'
 
@@ -1154,8 +1160,9 @@ class Up_DW(Auth):
         return self._upload_data_with_nested_object(docs, SALES_API_URL, columns, group_columns, uniq_col,
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col)
 
-    @_check_columns(['shops','identifier','name','date_from','products'])
-    def upload_categorymanagers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
+    @_check_columns(['shops', 'identifier', 'name', 'date_from', 'products'])
+    def upload_categorymanagers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                                index_col=False):
 
         """
         Функція завантажує на сервер категорійних менеджерів
@@ -1173,17 +1180,19 @@ class Up_DW(Auth):
 
         """
 
-
         if columns is None:
-            columns = ['shops','identifier','name','date_from','products']
+            columns = ['shops', 'identifier', 'name', 'date_from', 'products']
 
         return self._send_chunk_data(CATEGORYMANAGER_API_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter,chunk_size=1)
+                                     splitter=splitter, chunk_size=1)
 
-    @_check_columns(['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id','qty', 'price', 'total_price'])
-    def upload_supplier_refunds(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
+    @_check_columns(
+        ['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id', 'qty', 'price',
+         'total_price'])
+    def upload_supplier_refunds(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                                index_col=False):
 
         """
         Функція завантажує на сервер документи отримання товарів
@@ -1222,7 +1231,7 @@ class Up_DW(Auth):
 
         if columns is None:
             columns = ['document_id', 'supplier_id', 'shop_id', 'date', 'product_id',
-                       'receive_document_id','qty', 'price', 'total_price']
+                       'receive_document_id', 'qty', 'price', 'total_price']
 
         group_columns = [
             'document_id',
@@ -1240,7 +1249,6 @@ class Up_DW(Auth):
         uniq_col = 'document_id'
 
         nested_field_name = 'products'
-
 
         return self._upload_data_with_nested_object(docs, SUPPLIER_REFUNDS_URL, columns, group_columns, uniq_col,
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col)
@@ -1300,11 +1308,11 @@ class Up_DW(Auth):
         """
 
         params = {'function': 'upload_to_service',
-                  'email':email,
+                  'email': email,
                   'cache': cache}
         return self._post('utils', data=params)['results']
 
-    def cache(self, email, date_from=None, date_to = None, date_list = None, shops = None):
+    def cache(self, email, date_from=None, date_to=None, date_list=None, shops=None):
         """
         Функція запускає на сервері процес кешування
         даних. Після його завершення користувач отримає повідомлення
@@ -1312,7 +1320,7 @@ class Up_DW(Auth):
         """
 
         params = {'function': 'cache_data',
-                  'email':email,
+                  'email': email,
                   'date_from': date_from,
                   'date_to': date_to,
                   'date_list': date_list,
@@ -1326,35 +1334,41 @@ class Up_DW(Auth):
         на вказану адресу електронної пошти
         """
         params = {'function': 'clear_receipts',
-                  'email':email}
+                  'email': email}
         return self._post('utils', data=params)['results']
 
     def clear_client(self, email, dlt=False):
-        params = {'function':'clear_client',
-                  'dlt':dlt,
-                  'email':email}
+        params = {'function': 'clear_client',
+                  'dlt': dlt,
+                  'email': email}
         return self._post('utils', data=params)['results']
 
     def upload_data(self, path=None):
 
         if path is None:
             path = os.path.dirname(os.path.realpath(__file__))
-        files = ['units.csv','categories.csv',
-                 'shops.csv','terminals.csv',
-                 'cashiers.csv','products.csv',
-                 'clients.csv','prices.csv',
-                 'inventory.csv','receipts.csv']
+        files = ['units.csv', 'categories.csv',
+                 'shops.csv', 'terminals.csv',
+                 'cashiers.csv', 'products.csv',
+                 'clients.csv', 'prices.csv',
+                 'inventory.csv', 'receipts.csv']
         dr = os.listdir(path)
         if [x for x in files if x not in dr]:
             self.logging.error('Required files is missing')
             return False
-        self.upload_units(os.path.join(path,'units.csv'))
-        self.upload_cashiers(os.path.join(path,'cashiers.csv'))
-        self.upload_categories(os.path.join(path,'categories.csv'))
-        self.upload_shops(os.path.join(path,'shops.csv'))
-        self.upload_terminals(os.path.join(path,'terminals.csv'))
-        self.upload_products(os.path.join(path,'products.csv'), columns=['product_id', 'barcode', 'name', 'category_id', 'unit_id'])
-        self.upload_loyalty_client_info(os.path.join(path,'clients.csv'), columns=['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male', 'discount'])
-        self.upload_price(os.path.join(path,'prices.csv'))
-        self.upload_inventory(os.path.join(path,'inventory.csv'), columns=['shop_id', 'product_id','date', 'qty', 'original_price', 'stock_total_price'])
-        self.upload_receipts(os.path.join(path,'terminals.csv'), columns=['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date', 'product_id','price','qty', 'total_price'])
+        self.upload_units(os.path.join(path, 'units.csv'))
+        self.upload_cashiers(os.path.join(path, 'cashiers.csv'))
+        self.upload_categories(os.path.join(path, 'categories.csv'))
+        self.upload_shops(os.path.join(path, 'shops.csv'))
+        self.upload_terminals(os.path.join(path, 'terminals.csv'))
+        self.upload_products(os.path.join(path, 'products.csv'),
+                             columns=['product_id', 'barcode', 'name', 'category_id', 'unit_id'])
+        self.upload_loyalty_client_info(os.path.join(path, 'clients.csv'),
+                                        columns=['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male',
+                                                 'discount'])
+        self.upload_price(os.path.join(path, 'prices.csv'))
+        self.upload_inventory(os.path.join(path, 'inventory.csv'),
+                              columns=['shop_id', 'product_id', 'date', 'qty', 'original_price', 'stock_total_price'])
+        self.upload_receipts(os.path.join(path, 'terminals.csv'),
+                             columns=['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date',
+                                      'product_id', 'price', 'qty', 'total_price'])
