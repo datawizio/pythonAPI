@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#coding:utf-8
-# REQUIRES requests, httpig, PyCrypto
+# coding:utf-8
+# REQUIRES requests, httpssig, PyCrypto
 
 import tempfile, os, copy
 import requests, json
@@ -12,26 +12,29 @@ import urllib
 import logging
 import datetime
 
-
 logging.basicConfig(
-    format = u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level = logging.INFO, file = 'C://log.txt')
+    format=u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
+    level=logging.INFO, file='C://log.txt')
 
 TEST_USERNAME = 'test1@mail.com'
 TEST_PASSWORD = '1qaz'
 CLIENT_ID = "qYmlfNCjNwDu7p6PdQGTDTsDI6wDmxP2bJXCl3hc"
 CLIENT_SECRET = "HoQuYukvjCFB9G4hCZABFF7ryL10J9lT9QQsQsgDP21EdMs7JVvsdiN2e1UuosbWl90St4nMiTPrgOj1kSCWD3uOfjmqUnjXKkVV3xVZtHGJlJiBC6VXLKLr3js339l1"
-HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT", 'Content-Type':'application/json'}
+HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT",
+           'Content-Type':'application/json'}
 API_URL = 'http://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
 DEFAULT_HOST = 'api2.test.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
+
 class APIGetError(Exception):
     pass
 
+
 class APIUploadError(Exception):
     pass
+
 
 class APIAuthError(Exception):
     pass
@@ -91,7 +94,8 @@ class Auth:
         #     if self.API_SECRET is None:
         #         raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
         #     oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
-        #     token = oauth.fetch_token(token_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"), username=self.API_KEY,
+        #     token = oauth.fetch_token(token_url="http://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
+        #                               username=self.API_KEY,
         #                               password=self.API_SECRET,
         #                               client_id=CLIENT_ID,
         #                               client_secret=CLIENT_SECRET)
@@ -100,7 +104,7 @@ class Auth:
         # client = OAuth2Session(CLIENT_ID, token=token,
         #                        auto_refresh_kwargs={"client_id": CLIENT_ID,
         #                                             "client_secret": CLIENT_SECRET},
-        #                        auto_refresh_url="http://%s/%s/"%(self.HEADERS['Host'], "api/o/token"),
+        #                        auto_refresh_url="http://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
         #                        token_updater=self._token_update_handler)
         client = requests.Session()
         client.auth = HTTPBasicAuth(self.API_KEY, self.API_SECRET)
@@ -110,9 +114,10 @@ class Auth:
         fh = open(filename, 'a+')
         for item in data:
             line = ';'.join([str(x) if x is not None else '' for x in item.values()])
-            fh.write(line+'\n')
+            fh.write(line + '\n')
         fh.close()
-    def _get(self, resource_url, params={}, data = {}):
+
+    def _get(self, resource_url, params={}, data={}):
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
         передаючи серверу параметри із params
@@ -122,27 +127,28 @@ class Auth:
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         # Особливість urlencode - кодує значення somevar = None в строку "somevar=None", тому замінюємо всі None на пусті значення
         try:
-            response = self.client.get('%s/%s/?%s'%(self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
-                                    headers = self.HEADERS,
-                                    data=json.dumps(data))
+            response = self.client.get(
+                '%s/%s/?%s' % (self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
+                headers=self.HEADERS,
+                data=json.dumps(data))
         except RequestException, error:
-            raise APIGetError("Error, while loading data. %s"%error)
+            raise APIGetError("Error, while loading data. %s" % error)
 
         # Якщо сервер повертає помилку, виводимо її
         # Формат відповіді сервера {'detail':'error message'}
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json().get('detail', '')
-                raise APIGetError('Error, while loading data. %s'%error)
+                raise APIGetError('Error, while loading data. %s' % error)
             # Якщо сервер не повернув помилку, як об’єкт json
             except ValueError:
-                raise APIGetError('%s %s'%(response.status_code, response.reason))
+                raise APIGetError('%s %s' % (response.status_code, response.reason))
         # Інакше повертаємо результат
         if response.text:
             return response.json()
         return {}
 
-    def _post(self, resource_url, params={}, data = {}, chunk = False):
+    def _post(self, resource_url, params={}, data={}, chunk=False):
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
         передаючи серверу параметри із params
@@ -153,16 +159,16 @@ class Auth:
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = self.client.post('%s/%s/'%(self.API_URL, resource_url), data = json.dumps(data), headers = headers)
+            response = self.client.post('%s/%s/' % (self.API_URL, resource_url), data=json.dumps(data), headers=headers)
         except RequestException, error:
-            raise APIUploadError("Error, while loading data. %s"%error)
+            raise APIUploadError("Error, while loading data. %s" % error)
 
         # Якщо сервер повертає помилку, виводимо її
         # Формат відповіді сервера {'detail':'error message'}
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json()
-                print "ERROR",error
+                print "ERROR", error
                 # print error
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
@@ -171,20 +177,20 @@ class Auth:
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     # Відправляємо сформований чанк на сервер
-                    self.client.post('%s/%s/'%(API_URL, resource_url), data = json.dumps(data), headers = headers)
+                    self.client.post('%s/%s/' % (API_URL, resource_url), data=json.dumps(data), headers=headers)
                     # Повертаємо індекси невірних елементів, для подальшої обробки, або виводу користувачу
                     return failed_elements
-                raise APIUploadError('Error, while loading data. %s'%str(error.get('detail', '')))
+                raise APIUploadError('Error, while loading data. %s' % str(error.get('detail', '')))
             # Якщо сервер не повернув помилку, як об’єкт json
             except ValueError:
-                raise APIUploadError('%s %s'%(response.status_code, response.reason))
+                raise APIUploadError('%s %s' % (response.status_code, response.reason))
         # Інакше повертаємо результат
         if response.text and not chunk:
             # print response.json()
             return response.json()
         return {}
 
-    def _put(self, resource_url, params={}, data = {}):
+    def _put(self, resource_url, params={}, data={}):
 
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
@@ -194,19 +200,20 @@ class Auth:
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = self.client.put('%s/%s/'%(self.API_URL, resource_url), params = params, data = json.dumps(data), headers = self.HEADERS)
+            response = self.client.put('%s/%s/' % (self.API_URL, resource_url), params=params, data=json.dumps(data),
+                                       headers=self.HEADERS)
         except RequestException, error:
-            raise APIUploadError("Error, while loading data. %s"%error)
+            raise APIUploadError("Error, while loading data. %s" % error)
 
         # Якщо сервер повертає помилку, виводимо її
         # Формат відповіді сервера {'detail':'error message'}
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json().get('detail', '')
-                raise APIGetError('Error, while loading data. %s'%error)
+                raise APIGetError('Error, while loading data. %s' % error)
             # Якщо сервер не повернув помилку, як об’єкт json
             except ValueError:
-                raise APIUploadError('%s %s'%(response.status_code, response.reason))
+                raise APIUploadError('%s %s' % (response.status_code, response.reason))
         # Інакше повертаємо результат
         if response.text:
             return response.json()
@@ -214,9 +221,9 @@ class Auth:
 
     def _options(self, resource_url):
         try:
-            response = self.client.options('%s/%s/'%(self.API_URL, resource_url), headers = self.HEADERS)
+            response = self.client.options('%s/%s/' % (self.API_URL, resource_url), headers=self.HEADERS)
         except RequestException, error:
-            raise APIUploadError("Error, while loading data. %s"%error)
+            raise APIUploadError("Error, while loading data. %s" % error)
         return response.json()
 
     def _set_host(self, host=None):
@@ -224,10 +231,10 @@ class Auth:
             host = DEFAULT_HOST
         self.HEADERS['Host'] = host
         # self.API_URL = 'http://%s/api/v1'%host
-        self.API_URL = 'http://%s/api/v1'%host
+        self.API_URL = 'http://%s/api/v1' % host
         return True
 
-    def unstack_df(self,df, by, show):
+    def unstack_df(self, df, by, show):
         if df.empty:
             return df
         cols = list(df.columns)
@@ -238,7 +245,7 @@ class Auth:
         if 'sum' in df.columns:
             group_cols.pop(group_cols.index('sum'))
             cols.pop(cols.index('sum'))
-            sum_series=df.set_index('date')['sum'].to_frame()
+            sum_series = df.set_index('date')['sum'].to_frame()
         col_id = cols[0]
         if show == 'both':
             if len(cols) > 1:
@@ -265,7 +272,7 @@ class Auth:
         }
 
         """
-        params = {'name':name,
+        params = {'name': name,
                   'email': email,
                   'password': password}
         return self._post('register_user', data=params)['results']
