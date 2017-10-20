@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coding:utf-8
+# coding:utf-8
 
 import datetime, shutil, os, zipfile
 import pandas as pd
@@ -8,7 +8,6 @@ from functools import wraps
 
 import csv
 import warnings
-
 
 INTERVALS = ['days', 'weeks', 'months', 'years']
 MODEL_FIELDS = ['turnover', 'qty', 'receipts_qty', 'stock_qty',
@@ -43,20 +42,22 @@ SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
 
-class DW(Auth):
 
+class DW(Auth):
     def _check_params(func):
         """
         Функція-декоратор, приймає іменовані аргументи і звіряє їх з заданим шаблоном
         """
+
         def id_list(var):
             if isinstance(var, list):
-                return var#splitter.join([str(x) for x in var])
+                return var  # splitter.join([str(x) for x in var])
             return [var]
+
         def value_in_list(var, lst):
             if var in lst:
                 return var
-            raise ValueError('Incorrect param value <%s>'%var)
+            raise ValueError('Incorrect param value <%s>' % var)
 
         def value_or_iter_in_list(var, lst):
             if isinstance(var, list):
@@ -66,6 +67,7 @@ class DW(Auth):
             elif var in lst:
                 return [var]
             raise ValueError('Incorrect param value <%s>' % var)
+
         def stringify_date(date, format='%Y-%m-%d'):
             if isinstance(date, str):
                 datetime.datetime.strptime(date, format)
@@ -73,7 +75,6 @@ class DW(Auth):
             elif isinstance(date, (datetime.date, datetime.datetime)):
                 return date.strftime(format)
             return None
-
 
         @wraps(func)
         def wrapper(self, **kwargs):
@@ -83,30 +84,31 @@ class DW(Auth):
                 # Перевіряємо по шаблону, чи аргумент коректного типу
                 if kwarg in params and isinstance(kwargs[kwarg], params[kwarg]['types']):
                     # Викликаємо задану в шаблоні функцію для обробки даних
-                   kwargs[kwarg] = params[kwarg]['call'](kwargs[kwarg])
+                    kwargs[kwarg] = params[kwarg]['call'](kwargs[kwarg])
                 elif kwarg in params and not isinstance(kwargs[kwarg], params[kwarg]['types']):
-                    raise TypeError('Incorrect param type for <%s> '%kwarg)
+                    raise TypeError('Incorrect param type for <%s> ' % kwarg)
             return func(self, **kwargs)
+
         splitter = ','
         # Шаблони для змінних - в types допустимі типи, в call функція обробки данних змінної
         params = {'shops':
-                      {'types':(int, list),
+                      {'types': (int, list),
                        'call': id_list},
                   'categories':
-                      {'types':(int, list),
+                      {'types': (int, list),
                        'call': id_list},
                   'category':
                       {'types': int,
                        'call': lambda x: x},
                   'products':
-                      {'types':(int, list),
+                      {'types': (int, list),
                        'call': id_list},
                   'date_from':
                       {'types': (datetime.date, str),
                        'call': stringify_date},
                   'date_to':
                       {'types': (datetime.date, str),
-                      'call': stringify_date},
+                       'call': stringify_date},
                   'date': {'types': (datetime.date, str),
                            'call': lambda x: stringify_date(x, format="%Y-%m")},
                   'interval':
@@ -125,7 +127,7 @@ class DW(Auth):
                       {'types': list,
                        'call': id_list},
                   'id_list': {'types': list,
-                            'call': id_list},
+                              'call': id_list},
                   'price_from':
                       {'types': int,
                        'call': lambda x: x},
@@ -144,20 +146,20 @@ class DW(Auth):
                                  'call': id_list},
                   'on': {'types': str,
                          'call': lambda x: value_in_list(x, ['category', 'shops'])},
-                  'level': {'types':int,
+                  'level': {'types': int,
                             'call': lambda x: x},
                   'per_shop': {'types': bool,
-                            'call': lambda x: x},
-                  'window':{'types': int,
-                            'call': lambda x: x},
+                               'call': lambda x: x},
+                  'window': {'types': int,
+                             'call': lambda x: x},
 
-                }
+                  }
         return wrapper
 
     def _prepare_raw_results(self, results):
         res = {}
         for key, value in results.iteritems():
-            if isinstance(key, (str, unicode)) and  not 'url' in key:
+            if isinstance(key, (str, unicode)) and not 'url' in key:
                 res[key] = value
         return res
 
@@ -173,8 +175,8 @@ class DW(Auth):
             data = self._get(url, params={'page': page})
             results = data.get('results', None)
             if results:
-                has_next= True if data['next'] else False
-                page+=1
+                has_next = True if data['next'] else False
+                page += 1
                 yield [self._prepare_raw_results(x) for x in results]
 
     def _get_data_by_daterange(self, func, date_from, date_to):
@@ -182,7 +184,6 @@ class DW(Auth):
         date_range = [x.date() for x in pd.date_range(start=date_from, end=date_to)]
         for date in date_range:
             yield func(date_from=date, date_to=date)
-
 
     def _sort_columns(self, dataframe, columns):
         columns_difference = set(dataframe.columns) - set(columns)
@@ -199,7 +200,7 @@ class DW(Auth):
         if view_type == "represent":
             if not view_column in dataframe.columns:
                 raise ValueError("Unknown view column")
-            if show is not None and show=="both":
+            if show is not None and show == "both":
                 dataframe['mixed_name_column'] = dataframe[view_column].astype(str) + '_' + dataframe['name']
                 view_column = "mixed_name_column"
             elif show is not None and show == "name":
@@ -207,7 +208,7 @@ class DW(Auth):
             data_fields = [x for x in dataframe.columns if x in MODEL_FIELDS]
             if len(data_fields) == 0:
                 raise ValueError("Unknown data field")
-            elif len(data_fields)>1:
+            elif len(data_fields) > 1:
                 warnings.warn("Received more than one data column, result truncated")
             data_field = data_fields[0]
             dataframe = dataframe.set_index([index_column, view_column])
@@ -216,7 +217,6 @@ class DW(Auth):
             return dataframe
         warnings.warn("No view for this viewtype, original dataframe returned")
         return dataframe
-
 
     def _deserialize(self, obj, fields={}):
         """
@@ -235,18 +235,17 @@ class DW(Auth):
                     pass
         return obj
 
-
     @_check_params
     def get_products_sale(self, categories=None,
-                          shops = None,
-                          products = None,
-                          date_from = None,
-                          date_to = None,
-                          weekday = None,
-                          interval = "days",
-                          by = None,
-                          show = "id",
-                          view_type = "represent"):
+                          shops=None,
+                          products=None,
+                          date_from=None,
+                          date_to=None,
+                          weekday=None,
+                          interval="days",
+                          by=None,
+                          show="id",
+                          view_type="represent"):
         """
         Parameters:
         ------------
@@ -314,14 +313,14 @@ class DW(Auth):
                   'date_to': date_to,
                   'shops': shops,
                   'products': products,
-                  'categories':  categories,
-                  'select' : by or ["turnover"],
+                  'categories': categories,
+                  'select': by or ["turnover"],
                   'interval': interval,
                   'weekday': weekday,
                   'show': show
                   }
 
-        result = self._post(GET_PRODUCTS_SALE_URI, data = params)["results"]
+        result = self._post(GET_PRODUCTS_SALE_URI, data=params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -333,17 +332,17 @@ class DW(Auth):
 
     @_check_params
     def get_categories_sale(self, categories=None,
-                            shops = None,
-                            date_from = None,
-                            date_to = None,
-                            weekday = None,
-                            interval = 'days',
-                            by = None,
-                            show = 'name',
-                            view_type = 'represent',
+                            shops=None,
+                            date_from=None,
+                            date_to=None,
+                            weekday=None,
+                            interval='days',
+                            by=None,
+                            show='name',
+                            view_type='represent',
                             window=30,
-			    per_shop=False
-			   ):
+                            per_shop=False
+                            ):
         """
         Parameters:
         ------------
@@ -405,15 +404,15 @@ class DW(Auth):
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'shops': shops,
-                  'categories':  categories,
-                  'select' : by or ["turnover"],
+                  'categories': categories,
+                  'select': by or ["turnover"],
                   'interval': interval,
                   'weekday': weekday,
                   'window': window,
                   'show': show,
-		  'per_shop': per_shop 
-		 }
-        result = self._post(GET_CATEGORIES_SALE_URI, data = params)["results"]
+                  'per_shop': per_shop
+                  }
+        result = self._post(GET_CATEGORIES_SALE_URI, data=params)["results"]
         # Якщо результат коректний, повертаємо DataFrame з результатом, інакше - пустий DataFrame
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -422,8 +421,6 @@ class DW(Auth):
                                          columns_order=by,
                                          show=show)
         return pd.DataFrame()
-
-
 
     @_check_params
     def get_product(self, products=None, limit=None):
@@ -454,9 +451,9 @@ class DW(Auth):
             dw.get_product(products=2280001)
         """
         if products is not None and len(products) == 1:
-            return self._get('%s/%s'%(GET_PRODUCT, products[0]))
-	
-        return self._get(GET_PRODUCT, data = {'products': products}, params={"limit": limit})
+            return self._get('%s/%s' % (GET_PRODUCT, products[0]))
+
+        return self._get(GET_PRODUCT, data={'products': products}, params={"limit": limit})
 
     def get_receipt(self, receipt_id):
         """
@@ -490,26 +487,25 @@ class DW(Auth):
 
         if not isinstance(receipt_id, int):
             raise TypeError("Incorrect param type")
-        receipt =  self._get(GET_RECEIPT, params = {'receipt_id': receipt_id})
+        receipt = self._get(GET_RECEIPT, params={'receipt_id': receipt_id})
         if receipt:
-            cartitems = [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in receipt['cartitems']]
-            receipt = self._deserialize(receipt, fields = {"turnover": float})
+            cartitems = [self._deserialize(x, fields={"price": float, 'qty': float}) for x in receipt['cartitems']]
+            receipt = self._deserialize(receipt, fields={"turnover": float})
             receipt['cartitems'] = cartitems
         return receipt
 
-
     @_check_params
     def get_receipts(self,
-                            products=None,
-                            shops = None,
-                            categories = None,
-                            loyalty = None,
-                            date_from = None,
-                            date_to = None,
-                            weekday = None,
-                            hours = None,
-                            type = 'full',
-                            only_loyalty = False
+                     products=None,
+                     shops=None,
+                     categories=None,
+                     loyalty=None,
+                     date_from=None,
+                     date_to=None,
+                     weekday=None,
+                     hours=None,
+                     type='full',
+                     only_loyalty=False
                      ):
         """
             Parameters:
@@ -608,10 +604,10 @@ class DW(Auth):
                   'weekday': weekday,
                   'hours': hours,
                   'type': type,
-                  'loyalty':loyalty,
-                  'only_loyalty':only_loyalty}
+                  'loyalty': loyalty,
+                  'only_loyalty': only_loyalty}
         # Отримуємо список чеків
-        receipts = self._get(GET_RECEIPT, data = params)['results']
+        receipts = self._get(GET_RECEIPT, data=params)['results']
         result = []
         if type == 'info' and receipts:
             return pd.DataFrame.from_records(receipts)
@@ -619,14 +615,14 @@ class DW(Auth):
         for receipt in receipts:
             cartitems = receipt['cartitems']
             if type == 'full':
-                cartitems =  [self._deserialize(x, fields = {"price": float, 'qty': float}) for x in cartitems]
-            receipt = self._deserialize(receipt, fields = {"turnover": float})
+                cartitems = [self._deserialize(x, fields={"price": float, 'qty': float}) for x in cartitems]
+            receipt = self._deserialize(receipt, fields={"turnover": float})
             receipt['cartitems'] = cartitems
             result.append(receipt)
         return result
 
     @_check_params
-    def get_category(self, categories = None):
+    def get_category(self, categories=None):
         """
             Parameters:
             ------------
@@ -661,10 +657,10 @@ class DW(Auth):
             dw.get_category(categories = [51171, 51172])
         """
         if categories is not None and len(categories) == 1:
-            return self._get('%s/%s'%(GET_CATEGORY, categories[0]))
-        return self._get(GET_CATEGORY, data = {'categories': categories})
+            return self._get('%s/%s' % (GET_CATEGORY, categories[0]))
+        return self._get(GET_CATEGORY, data={'categories': categories})
 
-    def search(self, query, by = "product", level=None):
+    def search(self, query, by="product", level=None):
         """
             Parameters:
             ------------
@@ -700,10 +696,10 @@ class DW(Auth):
             raise TypeError("Incorrect param type")
         if not by in ["product", "category", "both"]:
             raise TypeError("Incorrect param type")
-	params = {'q': query, 'select': by}
-	if level is not None:
-	    params['level'] = level
-        return dict(self._get(SEARCH, params = params)['results'])
+        params = {'q': query, 'select': by}
+        if level is not None:
+            params['level'] = level
+        return dict(self._get(SEARCH, params=params)['results'])
 
     def get_shops(self):
         """
@@ -725,11 +721,11 @@ class DW(Auth):
 
 
         """
-        #отримуємо дані
+        # отримуємо дані
         shops = dict(self._get(SHOPS)['results'])
-        #Приводимо їх до рідних типів Python
+        # Приводимо їх до рідних типів Python
         for shop_id, shop in shops.iteritems():
-            shops[shop_id] = self._deserialize(shop, fields = {"longitude": float, "latitude": float})
+            shops[shop_id] = self._deserialize(shop, fields={"longitude": float, "latitude": float})
         return shops
 
     def get_client_info(self):
@@ -748,22 +744,22 @@ class DW(Auth):
         }
         """
 
-        return self._deserialize(self._get(CLIENT), fields = {'shops': dict})
+        return self._deserialize(self._get(CLIENT), fields={'shops': dict})
 
     @_check_params
     def get_pairs(self,
-                  date_from = None,
-                  date_to = None,
-                  shops = None,
-                  hours = None,
-                  product_id = None,
-                  category_id = None,
-                  price_from = 0,
-                  price_to = 10000,
-                  pair_by = 'category',
-                  week_day = 'all',
-                  map = 1,
-                  show ='id',
+                  date_from=None,
+                  date_to=None,
+                  shops=None,
+                  hours=None,
+                  product_id=None,
+                  category_id=None,
+                  price_from=0,
+                  price_to=10000,
+                  pair_by='category',
+                  week_day='all',
+                  map=1,
+                  show='id',
                   ):
         """
         Parameters:
@@ -838,14 +834,15 @@ class DW(Auth):
                   'map': map,
                   'show': show
                   }
-        results = self._get(PAIRS, data = params)['results']
+        results = self._get(PAIRS, data=params)['results']
         if results:
             return pd.DataFrame.from_records(results)
         return pd.DataFrame()
         # if result:
         #     return pd.read_json(result)
         # return pd.DataFrame()
-    def id2name(self, id_list, typ = 'category'):
+
+    def id2name(self, id_list, typ='category'):
         """
         Params
         ------------
@@ -863,19 +860,19 @@ class DW(Auth):
         або
         {'<product_id>': <product_name>}
         """
-        #Перевіряємо аргументи на правильність
+        # Перевіряємо аргументи на правильність
         if not typ in ['category', 'product']:
             raise TypeError("Incorrect param type")
         if not isinstance(id_list, list):
             raise TypeError("Incorrect param type")
-        #Формуємо параметри і отримуємо результат запиту по цим параметрам
+        # Формуємо параметри і отримуємо результат запиту по цим параметрам
         # id_list = ','.join([str(x) for x in id_list])
         params = {'id_list': id_list,
                   'id_type': typ,
                   'function': 'id2name'}
-        return dict(self._post(UTILS, data = params)['results'])
+        return dict(self._post(UTILS, data=params)['results'])
 
-    def name2id(self, name_list, typ = 'category', level=None):
+    def name2id(self, name_list, typ='category', level=None):
         """
         Params
         ------------
@@ -908,9 +905,9 @@ class DW(Auth):
                   'function': 'name2id',
                   'level': level
                   }
-        return dict(self._post(UTILS, data = params)['results'])
+        return dict(self._post(UTILS, data=params)['results'])
 
-    def get_parent(self, categories, level = 1, type='category'):
+    def get_parent(self, categories, level=1, type='category'):
         """
         Params
         ---------------
@@ -947,17 +944,17 @@ class DW(Auth):
                   'level': level,
                   'function': 'get_parent',
                   'id_type': type}
-        return self._post(UTILS, data = params)['results']
+        return self._post(UTILS, data=params)['results']
 
     @_check_params
     def get_loyalty_customer(self,
-                             date_from = None,
-                             date_to = None,
-                             shops = None,
-                             name = None,
-                             loyalty_id = None,
-                             cardno = None,
-                             type = 'loyalty_id'):
+                             date_from=None,
+                             date_to=None,
+                             shops=None,
+                             name=None,
+                             loyalty_id=None,
+                             cardno=None,
+                             type='loyalty_id'):
         """
         Params
         ------------
@@ -1012,7 +1009,7 @@ class DW(Auth):
             'cardno': cardno,
             'type': type
         }
-        result = self._post(GET_LOYALTY_CUSTOMER, data = params)['results']
+        result = self._post(GET_LOYALTY_CUSTOMER, data=params)['results']
         if not result:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
@@ -1078,7 +1075,6 @@ class DW(Auth):
 			по магазинах  [601, 641],
         """
 
-
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'shops': shops,
@@ -1101,7 +1097,7 @@ class DW(Auth):
         params = {'date': date,
                   'shop_id': shop_id,
                   'product_id': product_id,
-                  'page_size':100000}
+                  'page_size': 100000}
         result = self._get(GET_PRODUCTS_INVENTORY, params=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -1113,7 +1109,7 @@ class DW(Auth):
 
     def get_api_receipts(self, date=None, shop_id=None, show_url=False):
 
-        params = {'date': date, 'shop_id': shop_id, 'page_size':100000}
+        params = {'date': date, 'shop_id': shop_id, 'page_size': 100000}
         result = self._get(GET_API_RECEIPT, params=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
@@ -1122,7 +1118,6 @@ class DW(Auth):
                 dataframe = dataframe[columns]
             return dataframe
         return pd.DataFrame()
-
 
     @_check_params
     def get_categories_stock(self,
@@ -1197,8 +1192,6 @@ class DW(Auth):
                                          show=show)
         return pd.DataFrame()
 
-
-
     @_check_params
     def get_lost_sales(self,
                        date_from=None,
@@ -1243,7 +1236,7 @@ class DW(Auth):
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'shops': shops,
-                  'category':category}
+                  'category': category}
 
         data = self._post(LOST_SALES, data=params)
         if not data['results']:
@@ -1255,9 +1248,9 @@ class DW(Auth):
                        date=None,
                        category=None,
                        shops=None,
-                       by = 'qty',
-                       show ='name',
-                       on = 'category'):
+                       by='qty',
+                       show='name',
+                       on='category'):
 
         """
         Parameters:
@@ -1374,14 +1367,13 @@ class DW(Auth):
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'sale_id': sale_id,
-                  'sale_shops':shops}
+                  'sale_shops': shops}
         result = self._post(SALES, data=params)['results']
         if not result:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
 
-
-    def get_sale_info(self,sale_id, shops=None):
+    def get_sale_info(self, sale_id, shops=None):
         """
         Parameters
         -------------
@@ -1456,10 +1448,10 @@ class DW(Auth):
 
     @_check_params
     def get_loyalty_sales(self,
-                           shops=None,
-                           date_from=None,
-                           date_to=None,
-                           ):
+                          shops=None,
+                          date_from=None,
+                          date_to=None,
+                          ):
 
         """
         Parameters
@@ -1474,9 +1466,9 @@ class DW(Auth):
         """
 
         params = {
-                  'shops': shops,
-                  'date_from': date_from,
-                  'date_to': date_to
+            'shops': shops,
+            'date_from': date_from,
+            'date_to': date_to
         }
 
         result = self._post(LOYALTY_SALES, data=params)['results']
@@ -1484,13 +1476,11 @@ class DW(Auth):
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
 
-
     def _zipdir(self, path, ziph):
         for root, dirs, files in os.walk(path):
             for file in files:
                 ziph.write(os.path.join(root, file), file)
 
-    
     def download_data(self, path=None):
         csv.register_dialect('unixpwd', delimiter=';', lineterminator='\n')
         if path is None:
@@ -1499,31 +1489,36 @@ class DW(Auth):
         if not os.path.isdir(tmp_dir):
             os.mkdir(tmp_dir)
         files = {'cashiers': ('cashiers', ['cashier_id', 'name']),
-         		 'shops': ('shops', ['shop_id', 'name', 'address', 'open_date', 'longitude', 'latitude']),
-         		 'terminals': ('terminals', ['terminal_id', 'shop_id', 'name']),
-         		 'units': ('units', ['unit_id', 'name']),
-         		 'products': ('products', ['product_id', 'barcode', 'name', 'category_id', 'unit_id']),
-         		 'clients': ('loyalty', ['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male', 'discount']),
-             'categories':('categories', ['category_id', 'name', 'parent_id']),
+                 'shops': ('shops', ['shop_id', 'name', 'address', 'open_date', 'longitude', 'latitude']),
+                 'terminals': ('terminals', ['terminal_id', 'shop_id', 'name']),
+                 'units': ('units', ['unit_id', 'name']),
+                 'products': ('products', ['product_id', 'barcode', 'name', 'category_id', 'unit_id']),
+                 'clients': (
+                 'loyalty', ['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male', 'discount']),
+                 'categories': ('categories', ['category_id', 'name', 'parent_id']),
                  'prices': ('date-prices', ['shop_id', 'product_id', 'date', 'original_price', 'price']),
-                 'inventory': ('product-inventory', ['shop_id', 'product_id','date', 'qty', 'original_price', 'stock_total_price']),
-                 'receipts': ('core-cartitem', ['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date', 'product_id','price','qty', 'total_price'])}
-        
-        for file,data in files.iteritems():
+                 'inventory': (
+                 'product-inventory', ['shop_id', 'product_id', 'date', 'qty', 'original_price', 'stock_total_price']),
+                 'receipts': ('core-cartitem',
+                              ['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date', 'product_id',
+                               'price', 'qty', 'total_price'])}
 
-            print 'Donwloading %s'%file
-            self.logging.info('Donwloading %s'%file)
-            with open(os.path.join(tmp_dir, '%s.csv'%file), 'w') as fh:
+        for file, data in files.iteritems():
+
+            print 'Donwloading %s' % file
+            self.logging.info('Donwloading %s' % file)
+            with open(os.path.join(tmp_dir, '%s.csv' % file), 'w') as fh:
                 writer = csv.DictWriter(fh, fieldnames=data[1], dialect='unixpwd')
                 writer.writeheader()
                 for items in self._get_raw_data(data[0]):
-                    [writer.writerow(dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x in items]
-                print '%s done'%file
-                self.logging.info('%s done!'%file)
+                    [writer.writerow(
+                        dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x
+                     in items]
+                print '%s done' % file
+                self.logging.info('%s done!' % file)
 
-        ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip')%datetime.datetime.now().strftime('%Y-%m-%d'), 'w')
+        ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip') % datetime.datetime.now().strftime('%Y-%m-%d'), 'w')
         self._zipdir(tmp_dir, ziph)
         ziph.close()
         shutil.rmtree(tmp_dir)
         self.logging.info('All done!')
-
