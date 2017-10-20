@@ -2,6 +2,7 @@
 # coding:utf-8
 # REQUIRES requests, httpssig, PyCrypto
 
+from __future__ import print_function
 import tempfile, os, copy
 import requests, json
 from requests.exceptions import RequestException
@@ -13,7 +14,8 @@ import datetime
 
 logging.basicConfig(
     format=u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level=logging.INFO, file='C://log.txt')
+    level=logging.INFO
+)
 
 TEST_USERNAME = 'test1@mail.com'
 TEST_PASSWORD = '1qaz'
@@ -80,7 +82,7 @@ class Auth:
         try:
             json.dump(self.access_data, open(temp_file, "w"))
         except Exception as e:
-            print e
+            print(e)
 
     def _token_update_handler(self, token):
         self.access_data[self.HEADERS["Host"]][self.API_KEY] = token
@@ -130,7 +132,7 @@ class Auth:
                 '%s/%s/?%s' % (self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
                 headers=self.HEADERS,
                 data=json.dumps(data))
-        except RequestException, error:
+        except RequestException as error:
             raise APIGetError("Error, while loading data. %s" % error)
 
         # Якщо сервер повертає помилку, виводимо її
@@ -159,7 +161,7 @@ class Auth:
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
             response = self.client.post('%s/%s/' % (self.API_URL, resource_url), data=json.dumps(data), headers=headers)
-        except RequestException, error:
+        except RequestException as error:
             raise APIUploadError("Error, while loading data. %s" % error)
 
         # Якщо сервер повертає помилку, виводимо її
@@ -167,7 +169,7 @@ class Auth:
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json()
-                print "ERROR", error
+                print("ERROR", error)
                 # print error
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
@@ -201,7 +203,7 @@ class Auth:
         try:
             response = self.client.put('%s/%s/' % (self.API_URL, resource_url), params=params, data=json.dumps(data),
                                        headers=self.HEADERS)
-        except RequestException, error:
+        except RequestException as error:
             raise APIUploadError("Error, while loading data. %s" % error)
 
         # Якщо сервер повертає помилку, виводимо її
@@ -221,7 +223,7 @@ class Auth:
     def _options(self, resource_url):
         try:
             response = self.client.options('%s/%s/' % (self.API_URL, resource_url), headers=self.HEADERS)
-        except RequestException, error:
+        except RequestException as error:
             raise APIUploadError("Error, while loading data. %s" % error)
         return response.json()
 
