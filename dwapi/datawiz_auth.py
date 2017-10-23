@@ -22,9 +22,9 @@ TEST_USERNAME = 'test1@mail.com'
 TEST_PASSWORD = '1qaz'
 CLIENT_ID = "qYmlfNCjNwDu7p6PdQGTDTsDI6wDmxP2bJXCl3hc"
 CLIENT_SECRET = "HoQuYukvjCFB9G4hCZABFF7ryL10J9lT9QQsQsgDP21EdMs7JVvsdiN2e1UuosbWl90St4nMiTPrgOj1kSCWD3uOfjmqUnjXKkVV3xVZtHGJlJiBC6VXLKLr3js339l1"
-HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT",
+HEADERS = {'Host': 'api.test.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT",
            'Content-Type':'application/json'}
-API_URL = 'http://api.datawiz.io/api/v1'
+API_URL = 'http://api.test.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
 DEFAULT_HOST = 'api.test.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
