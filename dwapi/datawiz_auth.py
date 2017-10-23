@@ -8,7 +8,6 @@ import requests, json
 from requests.exceptions import RequestException
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
-from requests.auth import HTTPBasicAuth
 import urllib
 import logging
 import datetime
@@ -22,11 +21,11 @@ TEST_USERNAME = 'test1@mail.com'
 TEST_PASSWORD = '1qaz'
 CLIENT_ID = "qYmlfNCjNwDu7p6PdQGTDTsDI6wDmxP2bJXCl3hc"
 CLIENT_SECRET = "HoQuYukvjCFB9G4hCZABFF7ryL10J9lT9QQsQsgDP21EdMs7JVvsdiN2e1UuosbWl90St4nMiTPrgOj1kSCWD3uOfjmqUnjXKkVV3xVZtHGJlJiBC6VXLKLr3js339l1"
-HEADERS = {'Host': 'api.test.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT",
-           'Content-Type':'application/json'}
-API_URL = 'http://api.test.datawiz.io/api/v1'
+HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT",
+           'Content-Type': 'application/json'}
+API_URL = 'https://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
-DEFAULT_HOST = 'api.test.datawiz.io'
+DEFAULT_HOST = 'api.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 
@@ -90,26 +89,26 @@ class Auth:
         self._write_access_data()
 
     def load_client(self):
-        # if self.API_KEY in self.access_data[self.HEADERS["Host"]]:
-        #     token = self.access_data[self.HEADERS['Host']][self.API_KEY]
-        # else:
-        #     if self.API_SECRET is None:
-        #         raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
-        #     oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
-        #     token = oauth.fetch_token(token_url="http://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
-        #                               username=self.API_KEY,
-        #                               password=self.API_SECRET,
-        #                               client_id=CLIENT_ID,
-        #                               client_secret=CLIENT_SECRET)
-        #     self._token_update_handler(token)
-        #
-        # client = OAuth2Session(CLIENT_ID, token=token,
-        #                        auto_refresh_kwargs={"client_id": CLIENT_ID,
-        #                                             "client_secret": CLIENT_SECRET},
-        #                        auto_refresh_url="http://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
-        #                        token_updater=self._token_update_handler)
-        client = requests.Session()
-        client.auth = HTTPBasicAuth(self.API_KEY, self.API_SECRET)
+        if self.API_KEY in self.access_data[self.HEADERS["Host"]]:
+            token = self.access_data[self.HEADERS['Host']][self.API_KEY]
+        else:
+            if self.API_SECRET is None:
+                raise APIAuthError("Refresh token is expired. To obtain new token, please, specify API SECRET argument")
+            oauth = OAuth2Session(client=LegacyApplicationClient(client_id=CLIENT_ID))
+            token = oauth.fetch_token(token_url="https://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
+                                      username=self.API_KEY,
+                                      password=self.API_SECRET,
+                                      client_id=CLIENT_ID,
+                                      client_secret=CLIENT_SECRET)
+            self._token_update_handler(token)
+
+        client = OAuth2Session(CLIENT_ID, token=token,
+                               auto_refresh_kwargs={"client_id": CLIENT_ID,
+                                                    "client_secret": CLIENT_SECRET},
+                               auto_refresh_url="https://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
+                               token_updater=self._token_update_handler)
+        # client = requests.Session()
+        # client.auth = httpsBasicAuth(self.API_KEY, self.API_SECRET)
         return client
 
     def _to_csv(self, data, filename):
@@ -127,7 +126,8 @@ class Auth:
         """
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
-        # Особливість urlencode - кодує значення somevar = None в строку "somevar=None", тому замінюємо всі None на пусті значення
+        # Особливість urlencode - кодує значення somevar = None в строку "somevar=None",
+        # тому замінюємо всі None на пусті значення
         try:
             response = self.client.get(
                 '%s/%s/?%s' % (self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
@@ -175,7 +175,7 @@ class Auth:
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
                     # Вичисляємо список індексів елементів чанку, які викликали помилку
-                    failed_elements = [error.index(x) for x in error if x]
+                    failed_elements = [error.index(x) for x in error if not x]
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     # Відправляємо сформований чанк на сервер
@@ -232,8 +232,8 @@ class Auth:
         if host is None:
             host = DEFAULT_HOST
         self.HEADERS['Host'] = host
-        # self.API_URL = 'http://%s/api/v1'%host
-        self.API_URL = 'http://%s/api/v1' % host
+        # self.API_URL = 'http://%s/api/v1' % host
+        self.API_URL = 'https://%s/api/v1' % host
         return True
 
     def unstack_df(self, df, by, show):
