@@ -26,7 +26,7 @@ HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue,
            'Content-Type':'application/json'}
 API_URL = 'http://api.datawiz.io/api/v1'
 # DEFAULT_HOST = 'bi.datawiz.io'
-DEFAULT_HOST = 'api2.test.datawiz.io'
+DEFAULT_HOST = 'api.test.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
 
 

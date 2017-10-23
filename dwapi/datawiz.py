@@ -44,7 +44,6 @@ SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
-GET_RAW_PRODUCTS = "products"
 GET_RAW_CATEGORIES = "categories"
 GET_RAW_RECEIPTS = "get-raw-receipts"
 
@@ -303,15 +302,14 @@ class DW(Auth):
         Examples:
             dw = datawiz.DW()
             dw.get_products_sale(products = [2833024, 2286946, 'sum'],by='turnover',
-				shops = [305, 306, 318, 321], 
-				date_from = datetime.date(2015, 8, 9), 
-				date_to = datetime.date(2015, 9, 9),
-				interval = datawiz.WEEKS)
-			Повернути дані обороту по товарах з id [2833024, 2286946], від 9-8-2015 до 9-9-2015
-			по магазинах  [305, 306, 318, 321], згрупованні по тижнях
-			Передавши параметр "sum" останнім елементом списку, отримаємо
-			додаткову колонку з сумою відповідного показника
-				
+                shops = [305, 306, 318, 321],
+                date_from = datetime.date(2015, 8, 9),
+                date_to = datetime.date(2015, 9, 9),
+                interval = datawiz.WEEKS)
+            Повернути дані обороту по товарах з id [2833024, 2286946], від 9-8-2015 до 9-9-2015
+            по магазинах  [305, 306, 318, 321], згрупованні по тижнях
+            Передавши параметр "sum" останнім елементом списку, отримаємо
+            додаткову колонку з сумою відповідного показника
         """
 
         # Формуємо словник параметрів і отримуємо результат запиту по цих параметрах
@@ -395,15 +393,14 @@ class DW(Auth):
         ------------
             dw = datawiz.DW()
             dw.get_categories_sale(categories = [50599, 50600, "sum"],by='turnover',
-				shops = [305, 306, 318, 321],
-				date_from = datetime.date(2015, 8, 9),
-				date_to = datetime.date(2015, 9, 9),
-				interval = datawiz.WEEKS)
-			Повернути дані обороту по категоріях з id [50599, 50600], від 9-8-2015 до 9-9-2015
-			по магазинах  [305, 306, 318, 321], згрупованні по тижнях
-			Передавши параметр "sum" останнім елементом списку, отримаємо
-			додаткову колонку з сумою відповідного показника
-
+                shops = [305, 306, 318, 321],
+                date_from = datetime.date(2015, 8, 9),
+                date_to = datetime.date(2015, 9, 9),
+                interval = datawiz.WEEKS)
+            Повернути дані обороту по категоріях з id [50599, 50600], від 9-8-2015 до 9-9-2015
+            по магазинах  [305, 306, 318, 321], згрупованні по тижнях
+            Передавши параметр "sum" останнім елементом списку, отримаємо
+            додаткову колонку з сумою відповідного показника
         """
 
         # Формуємо словник параметрів і отримуємо результат запиту по цих параметрах
@@ -782,21 +779,15 @@ class DW(Auth):
             result.extend(page_data)
         return result
 
-    def raw_products(self):
-        """
-        Returns
-        ----------
-        Повертає список всіх продуктів клієнта
-            [
-                {"category_id": "<category_id>", "name": "<category_name>", "parent_id": "<parent_id>"},
-                ...
-            ]
-        """
-        result = []
-        for page_data in self._get_raw_data(GET_RAW_PRODUCTS):
-            result.extend(page_data)
-        return result
-
+    @_check_params
+    def sale_items(self,
+                   date_from=None,
+                   date_to=None
+                   ):
+        results = self._get(GET_RAW_RECEIPTS, data={'date_from': date_from, 'date_to': date_to})['results']
+        if results:
+            return pd.DataFrame.from_records(results)
+        return results
 
     @_check_params
     def get_pairs(self,
