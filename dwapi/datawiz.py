@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # coding:utf-8
 
+from __future__ import print_function
+from __future__ import absolute_import
 import datetime, shutil, os, zipfile
 import pandas as pd
-from datawiz_auth import Auth
+from .datawiz_auth import Auth
 from functools import wraps
 
 import csv
@@ -41,6 +43,10 @@ SALES_PLAN = 'sales-plan'
 SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
+BRANDS = 'brands'
+GET_RAW_PRODUCTS = "products"
+GET_RAW_CATEGORIES = "categories"
+GET_RAW_RECEIPTS = "get-raw-receipts"
 
 
 class DW(Auth):
@@ -745,6 +751,52 @@ class DW(Auth):
         """
 
         return self._deserialize(self._get(CLIENT), fields={'shops': dict})
+
+    def raw_brands(self):
+        """
+        Returns
+        ----------
+        Повертає список всіх брендів клієнта
+            [
+                {"brand_id": "<brand_id>", "name": "<brand_name>"},
+                ...
+            ]
+        """
+        result = []
+        for page_data in self._get_raw_data(BRANDS):
+            result.extend(page_data)
+        return result
+
+    def raw_categories(self):
+        """
+        Returns
+        ----------
+        Повертає список всіх категорій клієнта
+            [
+                {"category_id": "<category_id>", "name": "<category_name>", "parent_id": "<parent_id>"},
+                ...
+            ]
+        """
+        result = []
+        for page_data in self._get_raw_data(GET_RAW_CATEGORIES):
+            result.extend(page_data)
+        return result
+
+    def raw_products(self):
+        """
+        Returns
+        ----------
+        Повертає список всіх продуктів клієнта
+            [
+                {"category_id": "<category_id>", "name": "<category_name>", "parent_id": "<parent_id>"},
+                ...
+            ]
+        """
+        result = []
+        for page_data in self._get_raw_data(GET_RAW_PRODUCTS):
+            result.extend(page_data)
+        return result
+
 
     @_check_params
     def get_pairs(self,
@@ -1505,7 +1557,7 @@ class DW(Auth):
 
         for file, data in files.iteritems():
 
-            print 'Donwloading %s' % file
+            print('Donwloading %s' % file)
             self.logging.info('Donwloading %s' % file)
             with open(os.path.join(tmp_dir, '%s.csv' % file), 'w') as fh:
                 writer = csv.DictWriter(fh, fieldnames=data[1], dialect='unixpwd')
@@ -1514,7 +1566,7 @@ class DW(Auth):
                     [writer.writerow(
                         dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x
                      in items]
-                print '%s done' % file
+                print('%s done' % file)
                 self.logging.info('%s done!' % file)
 
         ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip') % datetime.datetime.now().strftime('%Y-%m-%d'), 'w')
