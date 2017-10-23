@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # coding:utf-8
 
+from __future__ import print_function
+from __future__ import absolute_import
 import datetime, shutil, os, zipfile
 import pandas as pd
-from datawiz_auth import Auth
+from .datawiz_auth import Auth
 from functools import wraps
 
 import csv
@@ -1505,7 +1507,7 @@ class DW(Auth):
 
         for file, data in files.iteritems():
 
-            print 'Donwloading %s' % file
+            print('Donwloading %s' % file)
             self.logging.info('Donwloading %s' % file)
             with open(os.path.join(tmp_dir, '%s.csv' % file), 'w') as fh:
                 writer = csv.DictWriter(fh, fieldnames=data[1], dialect='unixpwd')
@@ -1514,7 +1516,7 @@ class DW(Auth):
                     [writer.writerow(
                         dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x
                      in items]
-                print '%s done' % file
+                print('%s done' % file)
                 self.logging.info('%s done!' % file)
 
         ziph = zipfile.ZipFile(os.path.join(path, 'archive-%s.zip') % datetime.datetime.now().strftime('%Y-%m-%d'), 'w')

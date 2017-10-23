@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-from datawiz_auth import Auth, APIGetError, APIUploadError
+from __future__ import absolute_import
+from .datawiz_auth import Auth, APIGetError, APIUploadError
 import pandas
 import os
 import math
@@ -146,7 +147,7 @@ class Up_DW(Auth):
                         self.logging.error('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                     else:
                         self.logging.info('Data chunk uploaded, %s elements failed' % len(invalid_elements))
-                except APIUploadError, error:
+                except APIUploadError as error:
                     # self._upload_data_recursively(resource_url, data)
                     self.logging.error('Data chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
@@ -177,7 +178,7 @@ class Up_DW(Auth):
                     invalid_elements = self._post(resource_url, data=chunk.to_dict('records'), chunk=True)
                     self.logging.info(
                         'Data chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
-                except APIUploadError, error:
+                except APIUploadError as error:
                     self.logging.error('Data chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
         else:
@@ -218,10 +219,10 @@ class Up_DW(Auth):
                         self.logging.error('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                     else:
                         self.logging.info('Data chunk uploaded, %s elements failed' % len(invalid_elements))
-                except APIUploadError, error:
+                except APIUploadError as error:
                     # self._upload_data_recursively
                     self.logging.error('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
-                    raise ('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
+                    raise '%s chunk #%s upload failed\n%s' % (url, chunk_num, error)
                 chunk_num += 1
             return True
         elif isinstance(data, str) and os.path.isfile(data):
@@ -265,7 +266,7 @@ class Up_DW(Auth):
                 data = self._create_request_object(last_chunk, group_columns, nested_field_name, total_columns)
                 self._post(url, data=data, chunk=True)
                 self.logging.info('%s chunk #%s uploaded' % (url, chunk_num))
-            except APIUploadError, error:
+            except APIUploadError as error:
                 # self._upload_data_recursively
                 self.logging.error('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
         else:
@@ -542,7 +543,7 @@ class Up_DW(Auth):
                     invalid_elements = self._post(LOYALTY_API_URL, data=chunk, chunk=True)
                     self.logging.info(
                         'Clients chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
-                except APIUploadError, error:
+                except APIUploadError as error:
                     self.logging.error('Clients chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
 
@@ -581,7 +582,7 @@ class Up_DW(Auth):
                     invalid_elements = self._post(LOYALTY_API_URL, data=chunk.to_dict('records'), chunk=True)
                     self.logging.info(
                         'Clients chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
-                except APIUploadError, error:
+                except APIUploadError as error:
                     self.logging.error('Clients chunk #%s upload failed\n%s' % (chunk_num, error))
                 chunk_num += 1
         else:
