@@ -43,6 +43,10 @@ SALES_PLAN = 'sales-plan'
 SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
+BRANDS = 'brands'
+GET_RAW_PRODUCTS = "products"
+GET_RAW_CATEGORIES = "categories"
+GET_RAW_RECEIPTS = "get-raw-receipts"
 
 
 class DW(Auth):
@@ -747,6 +751,52 @@ class DW(Auth):
         """
 
         return self._deserialize(self._get(CLIENT), fields={'shops': dict})
+
+    def raw_brands(self):
+        """
+        Returns
+        ----------
+        Повертає список всіх брендів клієнта
+            [
+                {"brand_id": "<brand_id>", "name": "<brand_name>"},
+                ...
+            ]
+        """
+        result = []
+        for page_data in self._get_raw_data(BRANDS):
+            result.extend(page_data)
+        return result
+
+    def raw_categories(self):
+        """
+        Returns
+        ----------
+        Повертає список всіх категорій клієнта
+            [
+                {"category_id": "<category_id>", "name": "<category_name>", "parent_id": "<parent_id>"},
+                ...
+            ]
+        """
+        result = []
+        for page_data in self._get_raw_data(GET_RAW_CATEGORIES):
+            result.extend(page_data)
+        return result
+
+    def raw_products(self):
+        """
+        Returns
+        ----------
+        Повертає список всіх продуктів клієнта
+            [
+                {"category_id": "<category_id>", "name": "<category_name>", "parent_id": "<parent_id>"},
+                ...
+            ]
+        """
+        result = []
+        for page_data in self._get_raw_data(GET_RAW_PRODUCTS):
+            result.extend(page_data)
+        return result
+
 
     @_check_params
     def get_pairs(self,
