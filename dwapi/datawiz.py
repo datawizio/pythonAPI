@@ -786,19 +786,19 @@ class DW(Auth):
     def sale_items(self,
                    date_from=None,
                    date_to=None,
-                   chunk_size=1000,
-                   page=1
+                   chunk_size=1000
                    ):
-        params = {
-            'date_from': date_from,
-            'date_to': date_to,
-            'chunk_size': chunk_size,
-            'page': page
-        }
-        results = self._get(GET_RAW_RECEIPTS, data=params)['results']
-        if results:
-            return pd.DataFrame.from_records(results)
-        return results
+        page = 1
+        has_next = True
+        query_data = {'date_from': date_from, 'date_to': date_to}
+
+        while has_next:
+            params = {'page_size': chunk_size, 'page': page}
+            data = self._get(GET_RAW_RECEIPTS, data=query_data, params=params)
+            results = data.get('results', {"table": [], "has_next": False})
+            has_next = results.get("has_next", False)
+            page += 1
+            yield pd.DataFrame.from_records(results["table"])
 
     @_check_params
     def get_pairs(self,
