@@ -8,9 +8,15 @@ import requests, json
 from requests.exceptions import RequestException
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
-import urllib
 import logging
 import datetime
+
+try:
+    from urllib.parse import urlencode
+except ImportError:
+    # Python 2
+    from urllib import urlencode
+
 
 logging.basicConfig(
     format=u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
@@ -130,7 +136,7 @@ class Auth:
         # тому замінюємо всі None на пусті значення
         try:
             response = self.client.get(
-                '%s/%s/?%s' % (self.API_URL, resource_url, urllib.urlencode(params).replace('None', '')),
+                '%s/%s/?%s' % (self.API_URL, resource_url, urlencode(params).replace('None', '')),
                 headers=self.HEADERS,
                 data=json.dumps(data))
         except RequestException as error:
