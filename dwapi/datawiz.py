@@ -7,7 +7,7 @@ import datetime, shutil, os, zipfile
 import pandas as pd
 from .datawiz_auth import Auth
 from functools import wraps
-
+import six
 import csv
 import warnings
 
@@ -46,6 +46,15 @@ SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 GET_RAW_CATEGORIES = "categories"
 GET_RAW_RECEIPTS = "get-raw-receipts"
+
+if six.PY3:
+    unicode = str
+
+
+def iteritems(obj):
+    if six.PY3:
+        return obj.items()
+    return obj.iteritems()
 
 
 class DW(Auth):
@@ -163,7 +172,7 @@ class DW(Auth):
 
     def _prepare_raw_results(self, results):
         res = {}
-        for key, value in results.iteritems():
+        for key, value in iteritems(results):
             if isinstance(key, (str, unicode)) and not 'url' in key:
                 res[key] = value
         return res
@@ -230,7 +239,7 @@ class DW(Auth):
         datetime_format = '%Y-%m-%d %H:%M:%S'
         date_format = '%Y-%m-%d'
         date_fields = ['date', 'date_from', 'date_to']
-        for key, value in obj.iteritems():
+        for key, value in iteritems(obj):
             if key in date_fields and obj[key]:
                 obj[key] = datetime.datetime.strptime(value, datetime_format)
             elif key in fields:
@@ -727,7 +736,7 @@ class DW(Auth):
         # отримуємо дані
         shops = dict(self._get(SHOPS)['results'])
         # Приводимо їх до рідних типів Python
-        for shop_id, shop in shops.iteritems():
+        for shop_id, shop in iteritems(shops):
             shops[shop_id] = self._deserialize(shop, fields={"longitude": float, "latitude": float})
         return shops
 
@@ -1212,12 +1221,12 @@ class DW(Auth):
         ------------
             dw = datawiz.DW()
             dw.get_categories_stock(categories = [68805, 69607], by='stock_value',
-				shops = [601, 641],
-				date_from = datetime.date(2015, 8, 9),
-				date_to = datetime.date(2015, 9, 9),
-				)
-			Повернути дані вартості товарів на залишку для категорій з id [68805, 69607], від 9-8-2015 до 9-9-2015
-			по магазинах  [601, 641],
+                shops = [601, 641],
+                date_from = datetime.date(2015, 8, 9),
+                date_to = datetime.date(2015, 9, 9),
+                )
+            Повернути дані вартості товарів на залишку для категорій з id [68805, 69607], від 9-8-2015 до 9-9-2015
+            по магазинах  [601, 641],
         """
         params = {'date_from': date_from,
                   'date_to': date_to,
@@ -1269,12 +1278,12 @@ class DW(Auth):
         ------------
             dw = datawiz.DW()
             dw.get_lost_sales(category = 68805,
-				shops = [601, 641],
-				date_from = datetime.date(2015, 8, 9),
-				date_to = datetime.date(2015, 9, 9),
-				)
-			Повернути дані по товарних дірах для категорії з id 68805, від 9-8-2015 до 9-9-2015
-			по магазинах  [601, 641],
+                shops = [601, 641],
+                date_from = datetime.date(2015, 8, 9),
+                date_to = datetime.date(2015, 9, 9),
+                )
+            Повернути дані по товарних дірах для категорії з id 68805, від 9-8-2015 до 9-9-2015
+            по магазинах  [601, 641],
         """
         params = {'date_from': date_from,
                   'date_to': date_to,
@@ -1348,9 +1357,9 @@ class DW(Auth):
         -----------------
         dw = datawiz.DW()
         dw.get_sales_plan(category = 68805,
-				shops = [601, 641],
-				date = datetime.date(2015, 8, 1),
-			)
+                shops = [601, 641],
+                date = datetime.date(2015, 8, 1),
+            )
         """
 
         params = {'date': date,
@@ -1546,7 +1555,7 @@ class DW(Auth):
                               ['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date', 'product_id',
                                'price', 'qty', 'total_price'])}
 
-        for file, data in files.iteritems():
+        for file, data in iteritems(files):
 
             print('Donwloading %s' % file)
             self.logging.info('Donwloading %s' % file)
@@ -1555,7 +1564,7 @@ class DW(Auth):
                 writer.writeheader()
                 for items in self._get_raw_data(data[0]):
                     [writer.writerow(
-                        dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in x.iteritems())) for x
+                        dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in iteritems(x))) for x
                      in items]
                 print('%s done' % file)
                 self.logging.info('%s done!' % file)
