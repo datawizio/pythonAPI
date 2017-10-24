@@ -762,38 +762,40 @@ class DW(Auth):
         """
         Returns
         ----------
-        Повертає список всіх брендів клієнта
+        Повертає список всіх брендів клієнта (Ітератор, де кожен елемент це масив)
             [
                 {"brand_id": "<brand_id>", "name": "<brand_name>"},
                 ...
             ]
         """
-        result = []
-        for page_data in self._get_raw_data(BRANDS):
-            result.extend(page_data)
-        return result
+        return self._get_raw_data(BRANDS)
 
     def raw_categories(self):
         """
         Returns
         ----------
-        Повертає список всіх категорій клієнта
+        Повертає список всіх категорій клієнта (Ітератор, де кожен елемент це масив)
             [
                 {"category_id": "<category_id>", "name": "<category_name>", "parent_id": "<parent_id>"},
                 ...
             ]
         """
-        result = []
-        for page_data in self._get_raw_data(GET_RAW_CATEGORIES):
-            result.extend(page_data)
-        return result
+        return self._get_raw_data(GET_RAW_CATEGORIES)
 
     @_check_params
     def sale_items(self,
                    date_from=None,
-                   date_to=None
+                   date_to=None,
+                   chunk_size=1000,
+                   page=1
                    ):
-        results = self._get(GET_RAW_RECEIPTS, data={'date_from': date_from, 'date_to': date_to})['results']
+        params = {
+            'date_from': date_from,
+            'date_to': date_to,
+            'chunk_size': chunk_size,
+            'page': page
+        }
+        results = self._get(GET_RAW_RECEIPTS, data=params)['results']
         if results:
             return pd.DataFrame.from_records(results)
         return results
