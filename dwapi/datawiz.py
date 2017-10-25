@@ -807,11 +807,10 @@ class DW(Auth):
                    ):
         page = 1
         has_next = True
-        query_data = {'date_from': date_from, 'date_to': date_to}
 
         while has_next:
-            params = {'page_size': chunk_size, 'page': page}
-            data = self._get(GET_RAW_RECEIPTS, data=query_data, params=params)
+            params = {'page_size': chunk_size, 'page': page, 'date_from': date_from, 'date_to': date_to}
+            data = self._get(GET_RAW_RECEIPTS, params=params)
             results = data.get('results', {"table": [], "has_next": False})
             has_next = results.get("has_next", False)
             page += 1
