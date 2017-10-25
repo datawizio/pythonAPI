@@ -815,7 +815,7 @@ class DW(Auth):
             results = data.get('results', {"table": [], "has_next": False})
             has_next = results.get("has_next", False)
             page += 1
-            yield pd.DataFrame.from_records(results["table"])
+            yield results["table"]
 
     @_check_params
     def get_pairs(self,
