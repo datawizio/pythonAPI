@@ -177,7 +177,7 @@ class DW(Auth):
                 res[key] = value
         return res
 
-    def _get_raw_data(self, url):
+    def _get_raw_data(self, url, params={}, params_data={}):
         """
         Функція для посторінкового завантаження даних. Повертає генератор
         """
@@ -186,7 +186,8 @@ class DW(Auth):
         has_next = True
         # print has_next
         while has_next:
-            data = self._get(url, params={'page': page})
+            params.update({'page': page})
+            data = self._get(url, params=params, data=params_data)
             results = data.get('results', None)
             if results:
                 has_next = True if data['next'] else False
@@ -265,7 +266,7 @@ class DW(Auth):
         ------------
         products: int,list
             id товару, або список з id по яких буде робитися вибірка.
-        categories: int,list 
+        categories: int,list
             id категорії, або список з id по яких буде робитися вибірка
         shops: int,list
             id магазину, або список з id по яких буде робитися вибірка
@@ -278,7 +279,7 @@ class DW(Auth):
             Якщо проміжок [date_from, date_to] не заданий, вибірка буде за весь час існування магазину.
             Якщо ж заданий тільки один з параметрів то замість іншого буде використанно перший
              або останій день відповідно існування магазину.
-        interval: str,{"days","months","weeks","years", default: "days" } 
+        interval: str,{"days","months","weeks","years", default: "days" }
             залежно від параметра, результат буде згруповано по днях, тижях, місяцях, або роках.
         by: str,
                     {"turnover": Оборот,
@@ -307,7 +308,7 @@ class DW(Auth):
              date2   |   by   |    by  |    by    |
              ...
              dateN   |   by   |    by  |    by    |
-        
+
         Examples:
             dw = datawiz.DW()
             dw.get_products_sale(products = [2833024, 2286946, 'sum'],by='turnover',
@@ -464,8 +465,16 @@ class DW(Auth):
         """
         if products is not None and len(products) == 1:
             return self._get('%s/%s' % (GET_PRODUCT, products[0]))
+        result = []
 
-        return self._get(GET_PRODUCT, data={'products': products}, params={"limit": limit})
+        page_size = 25000
+
+        for r in self._get_raw_data(GET_PRODUCT,
+                                    params={"limit": limit, "page_size": page_size},
+                                    params_data={'products': products}):
+            result.extend(r)
+
+        return result
 
     def get_receipt(self, receipt_id):
         """
@@ -758,7 +767,7 @@ class DW(Auth):
 
         return self._deserialize(self._get(CLIENT), fields={'shops': dict})
 
-    def raw_brands(self):
+    def raw_brands(self, chunk_size=10000):
         """
         Returns
         ----------
@@ -768,9 +777,9 @@ class DW(Auth):
                 ...
             ]
         """
-        return self._get_raw_data(BRANDS)
+        return self._get_raw_data(BRANDS, params={"page_size": chunk_size})
 
-    def raw_categories(self):
+    def raw_categories(self, chunk_size=10000):
         """
         Returns
         ----------
@@ -780,13 +789,21 @@ class DW(Auth):
                 ...
             ]
         """
-        return self._get_raw_data(GET_RAW_CATEGORIES)
+        return self._get_raw_data(GET_RAW_CATEGORIES, params={"page_size": chunk_size})
+
+    def raw_products(self, chunk_size=10000):
+        """
+            Returns
+            ----------
+            Повертає список всіх продуктів клієнта (Ітератор, де кожен елемент це масив)
+        """
+        return self._get_raw_data(GET_PRODUCT, params={"page_size": chunk_size})
 
     @_check_params
     def sale_items(self,
                    date_from=None,
                    date_to=None,
-                   chunk_size=1000
+                   chunk_size=10000
                    ):
         page = 1
         has_next = True
@@ -1548,11 +1565,12 @@ class DW(Auth):
                  'units': ('units', ['unit_id', 'name']),
                  'products': ('products', ['product_id', 'barcode', 'name', 'category_id', 'unit_id']),
                  'clients': (
-                 'loyalty', ['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male', 'discount']),
+                     'loyalty', ['loyalty_id', 'cardno', 'client_name', 'client_birthday', 'is_male', 'discount']),
                  'categories': ('categories', ['category_id', 'name', 'parent_id']),
                  'prices': ('date-prices', ['shop_id', 'product_id', 'date', 'original_price', 'price']),
                  'inventory': (
-                 'product-inventory', ['shop_id', 'product_id', 'date', 'qty', 'original_price', 'stock_total_price']),
+                     'product-inventory',
+                     ['shop_id', 'product_id', 'date', 'qty', 'original_price', 'stock_total_price']),
                  'receipts': ('core-cartitem',
                               ['shop_id', 'terminal_id', 'cashier_id', 'loyalty_id', 'receipt_id', 'date', 'product_id',
                                'price', 'qty', 'total_price'])}
@@ -1567,7 +1585,7 @@ class DW(Auth):
                 for items in self._get_raw_data(data[0]):
                     [writer.writerow(
                         dict((k, v.encode('utf-8') if isinstance(v, unicode) else v) for k, v in iteritems(x))) for x
-                     in items]
+                        in items]
                 print('%s done' % file)
                 self.logging.info('%s done!' % file)
 
