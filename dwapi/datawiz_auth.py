@@ -152,7 +152,7 @@ class Auth:
             except ValueError:
                 raise APIGetError('%s %s' % (response.status_code, response.reason))
         # Інакше повертаємо результат
-        if response.text:
+        if response.content:
             return response.json()
         return {}
 
@@ -193,7 +193,7 @@ class Auth:
             except ValueError:
                 raise APIUploadError('%s %s' % (response.status_code, response.reason))
         # Інакше повертаємо результат
-        if response.text and not chunk:
+        if response.content and not chunk:
             # print response.json()
             return response.json()
         return {}
