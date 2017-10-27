@@ -176,12 +176,12 @@ class Auth:
         if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
             try:
                 error = response.json()
-                print("ERROR", error)
                 # print error
                 # Якщо data - це чанк, виду [obj, obj, ...]
                 if chunk and isinstance(error, list):
                     # Вичисляємо список індексів елементів чанку, які викликали помилку
                     failed_elements = [error.index(x) for x in error if x]
+                    print("ERROR", failed_elements)
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     # Відправляємо сформований чанк на сервер
