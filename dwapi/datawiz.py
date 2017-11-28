@@ -800,6 +800,17 @@ class DW(Auth):
         return self._get_raw_data(GET_PRODUCT, params={"page_size": chunk_size})
 
     @_check_params
+    def raw_inventory(self, date_from=None, date_to=None, chunk_size=10000):
+        """
+            Returns
+            ----------
+            Повертає залишки клієнта за вибраний період (Ітератор, де кожен елемент це масив)
+        """
+        return self._get_raw_data(GET_PRODUCTS_INVENTORY, params={"page_size": chunk_size,
+                                                                  "date_from": date_from,
+                                                                  "date_to": date_to})
+
+    @_check_params
     def sale_items(self,
                    date_from=None,
                    date_to=None,
