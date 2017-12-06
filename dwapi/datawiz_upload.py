@@ -1163,7 +1163,7 @@ class Up_DW(Auth):
 
     @_check_columns(['shops', 'identifier', 'name', 'date_from', 'products'])
     def upload_categorymanagers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
-                                index_col=False):
+                                index_col=False, sync=False):
 
         """
         Функція завантажує на сервер категорійних менеджерів
@@ -1184,7 +1184,7 @@ class Up_DW(Auth):
         if columns is None:
             columns = ['shops', 'identifier', 'name', 'date_from', 'products']
 
-        return self._send_chunk_data(CATEGORYMANAGER_API_URL, docs,
+        return self._send_chunk_data(CATEGORYMANAGER_API_URL+"/?sync=%s"%int(sync), docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter, chunk_size=1)
