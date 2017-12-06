@@ -115,6 +115,7 @@ class Up_DW(Auth):
     def _send_chunk_data(self,
                          resource_url,
                          data,
+                         params=None,
                          columns=None,
                          subcolumns=None,
                          skip_rows=1,
@@ -142,7 +143,7 @@ class Up_DW(Auth):
             for chunk in self._split_list_to_chunks(data, chunk_size=chunk_size):
                 try:
                     # Відправляємо на сервер
-                    invalid_elements = self._post(resource_url, data=chunk, chunk=True)
+                    invalid_elements = self._post(resource_url, data=chunk, chunk=True, params=params)
                     if invalid_elements:
                         self.logging.error('Data chunk uploaded, %s elements failed' % len(invalid_elements))
                     else:
@@ -1184,7 +1185,8 @@ class Up_DW(Auth):
         if columns is None:
             columns = ['shops', 'identifier', 'name', 'date_from', 'products']
 
-        return self._send_chunk_data(CATEGORYMANAGER_API_URL+"/?sync=%s"%int(sync), docs,
+        return self._send_chunk_data(CATEGORYMANAGER_API_URL, docs,
+                                     params={"sync": int(sync)},
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter, chunk_size=1)

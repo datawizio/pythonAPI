@@ -167,7 +167,9 @@ class Auth:
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
-            response = self.client.post('%s/%s/' % (self.API_URL, resource_url), data=json.dumps(data), headers=headers)
+            response = self.client.post(
+                '%s/%s/?%s' % (self.API_URL, resource_url, urlencode(params).replace('None', '')),
+                data=json.dumps(data), headers=headers)
         except RequestException as error:
             raise APIUploadError("Error, while loading data. %s" % error)
 
