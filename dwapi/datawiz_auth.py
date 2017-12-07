@@ -124,7 +124,7 @@ class Auth:
             fh.write(line + '\n')
         fh.close()
 
-    def _get(self, resource_url, params={}, data={}):
+    def _get(self, resource_url, params=None, data={}):
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
         передаючи серверу параметри із params
@@ -134,6 +134,7 @@ class Auth:
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         # Особливість urlencode - кодує значення somevar = None в строку "somevar=None",
         # тому замінюємо всі None на пусті значення
+        params = params or {}
         try:
             response = self.client.get(
                 '%s/%s/?%s' % (self.API_URL, resource_url, urlencode(params).replace('None', '')),
@@ -156,7 +157,7 @@ class Auth:
             return response.json()
         return {}
 
-    def _post(self, resource_url, params={}, data={}, chunk=False):
+    def _post(self, resource_url, params=None, data={}, chunk=False):
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
         передаючи серверу параметри із params
@@ -164,12 +165,14 @@ class Auth:
         """
         headers = self.HEADERS
         headers['content-type'] = "application/json"
+        params = params or {}
 
         # Відсилаємо запит до api, параметри кодуємо функцією urlencode.
         try:
             response = self.client.post(
                 '%s/%s/?%s' % (self.API_URL, resource_url, urlencode(params).replace('None', '')),
                 data=json.dumps(data), headers=headers)
+
         except RequestException as error:
             raise APIUploadError("Error, while loading data. %s" % error)
 
