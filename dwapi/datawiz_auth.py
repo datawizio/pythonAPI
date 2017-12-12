@@ -186,7 +186,8 @@ class Auth:
                 if chunk and isinstance(error, list):
                     # Вичисляємо список індексів елементів чанку, які викликали помилку
                     failed_elements = [error.index(x) for x in error if x]
-                    print("ERROR", failed_elements)
+
+                    self.logging.error(failed_elements)
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     # Відправляємо сформований чанк на сервер
