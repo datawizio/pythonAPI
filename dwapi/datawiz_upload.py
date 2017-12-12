@@ -217,9 +217,9 @@ class Up_DW(Auth):
 
                     invalid_elements = self._post(url, data=chunk, chunk=True)
                     if invalid_elements:
-                        self.logging.error('%s | Data chunk uploaded, %s, %s elements failed' % (url.upper(), str(invalid_elements), len(invalid_elements)))
+                        self.logging.error('%s | data chunk uploaded, %s, %s elements failed' % (url.upper(), str(invalid_elements), len(invalid_elements)))
                     else:
-                        self.logging.info('%s | Data chunk uploaded, %s elements failed' % (url.upper(), len(invalid_elements)))
+                        self.logging.info('%s | data chunk uploaded, %s elements failed' % (url.upper(), len(invalid_elements)))
                 except APIUploadError as error:
                     # self._upload_data_recursively
                     self.logging.error('%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error))
