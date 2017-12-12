@@ -150,7 +150,7 @@ class Up_DW(Auth):
                         self.logging.info('%s | data chunk uploaded, %s elements failed' % (resource_url.upper(), len(invalid_elements)))
                 except APIUploadError as error:
                     # self._upload_data_recursively(resource_url, data)
-                    self.logging.error('Data chunk #%s upload failed\n%s' % (chunk_num, error))
+                    self.logging.error('%s | data chunk #%s upload failed\n%s' % (resource_url.upper(), chunk_num, error))
                 chunk_num += 1
         # Якщо ж переданий файл *.csv
         elif isinstance(data, str) and os.path.isfile(data):
@@ -222,8 +222,8 @@ class Up_DW(Auth):
                         self.logging.info('%s | Data chunk uploaded, %s elements failed' % (url.upper(), len(invalid_elements)))
                 except APIUploadError as error:
                     # self._upload_data_recursively
-                    self.logging.error('%s chunk #%s upload failed\n%s' % (url, chunk_num, error))
-                    raise '%s chunk #%s upload failed\n%s' % (url, chunk_num, error)
+                    self.logging.error('%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error))
+                    raise '%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error)
                 chunk_num += 1
             return True
         elif isinstance(data, str) and os.path.isfile(data):
