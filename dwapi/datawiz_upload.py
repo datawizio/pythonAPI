@@ -520,75 +520,23 @@ class Up_DW(Auth):
                  Розділювач даних в <filename>.csv
         """
 
-        def _get_client_name(obj):
-            # Створюємо ім’я клієнта, орієнтуючись на obj.first_name, obj.last_name
-            name = obj.first_name
-            last_name = obj.last_name
-            # Перевірка на NaN значення
-            if name != name and last_name != last_name:
-                return ''
-            elif name != name and last_name == last_name:
-                return last_name
-            elif name == name and last_name != last_name:
-                return name
-            else:
-                return '%s %s' % (name, last_name)
+        if columns is None:
+            columns = ['loyalty_id',
+                       'cardno',
+                       'client_birthday',
+                       'client_name',
+                       'is_male',
+                       'address',
+                       'email',
+                       'phone'
+                       ]
 
-        chunk_num = 1
-        # Якщо переданий список об’єктів клієнта
-        if isinstance(clients, list):
-            # Розбиваємо список на частини і відправляємо на сервер
-            for chunk in self._split_list_to_chunks(clients,
-                                                    chunk_size=DEFAULT_CHUNK_SIZE):
-                try:
-                    invalid_elements = self._post(LOYALTY_API_URL, data=chunk, chunk=True)
-                    self.logging.info(
-                        'Clients chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
-                except APIUploadError as error:
-                    self.logging.error('Clients chunk #%s upload failed\n%s' % (chunk_num, error))
-                chunk_num += 1
-
-        # Якщо ж переданий шлях до файлу
-        elif isinstance(clients, str) and os.path.isfile(clients):
-            if columns is None:
-                columns = ['loyalty_id',
-                           'cardno',
-                           'shop_id',
-                           'registration_date',
-                           'first_name',
-                           'last_name',
-                           'sex',
-                           'client_birthday',
-                           'address',
-                           'email'
-                           ]
-            # client_name створюємо динамічно, тому додаємо його тут
-            # subcolums.append('client_name')
-            chunk_num = 1
-            # Читаємо файл чанками розміром DEFAULT_CHUNK_SIZE
-            reader = pandas.read_csv(clients,
-                                     header=None,
-                                     chunksize=DEFAULT_CHUNK_SIZE,
-                                     names=columns,
-                                     sep=SEPARATOR,
-                                     skiprows=1)
-            for chunk in reader:
-                # chunk['client_name'] = chunk[['first_name', 'last_name']].apply(_get_client_name, axis = 1)
-                chunk = chunk[subcolumns]
-                # Замінює всі значення NaN в таблиці на None
-                # Потрібно, щоб передавати в словнику json значення null замість nan
-                chunk = chunk.where((pandas.notnull(chunk)), None)
-                self.logging.info('Data upload started')
-                try:
-                    invalid_elements = self._post(LOYALTY_API_URL, data=chunk.to_dict('records'), chunk=True)
-                    self.logging.info(
-                        'Clients chunk #%s uploaded, %s elements failed' % (chunk_num, len(invalid_elements)))
-                except APIUploadError as error:
-                    self.logging.error('Clients chunk #%s upload failed\n%s' % (chunk_num, error))
-                chunk_num += 1
-        else:
-            raise TypeError('Invalid arguments')
-        return True
+        return self._send_chunk_data(LOYALTY_API_URL,
+                                     clients,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
 
     @_check_columns(['cashier_id', 'name'])
     def upload_cashiers(self, cashiers, columns=None, subcolumns=None, splitter=SEPARATOR):
