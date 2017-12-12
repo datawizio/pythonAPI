@@ -145,7 +145,7 @@ class Up_DW(Auth):
                     # Відправляємо на сервер
                     invalid_elements = self._post(resource_url, data=chunk, chunk=True, params=params)
                     if invalid_elements:
-                        self.logging.error('%s | data chunk uploaded, %s elements failed' % (resource_url.upper(),invalid_elements))
+                        self.logging.error('%s | data chunk uploaded, %s elements failed' % (resource_url.upper(),len(invalid_elements)))
                     else:
                         self.logging.info('%s | data chunk uploaded, %s elements failed' % (resource_url.upper(), len(invalid_elements)))
                 except APIUploadError as error:
@@ -217,7 +217,7 @@ class Up_DW(Auth):
 
                     invalid_elements = self._post(url, data=chunk, chunk=True)
                     if invalid_elements:
-                        self.logging.error('%s | Data chunk uploaded, %s elements failed' % (url.upper(), invalid_elements))
+                        self.logging.error('%s | Data chunk uploaded, %s elements failed' % (url.upper(), len(invalid_elements)))
                     else:
                         self.logging.info('%s | Data chunk uploaded, %s elements failed' % (url.upper(), len(invalid_elements)))
                 except APIUploadError as error:
