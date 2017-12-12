@@ -190,7 +190,7 @@ class Auth:
                     # Формуємо чанк, який не буде викликати помилку на сервері
                     data = [x for x in data if data.index(x) not in failed_elements]
                     failed_elements = [x for x in error if error.index(x) in failed_elements]
-                    self.logging.error(resource_url.upper()+' '+str(failed_elements))
+                    # self.logging.error(resource_url.upper()+' '+str(failed_elements))
                     # Відправляємо сформований чанк на сервер
                     self.client.post('%s/%s/' % (API_URL, resource_url), data=json.dumps(data), headers=headers)
                     # Повертаємо індекси невірних елементів, для подальшої обробки, або виводу користувачу
