@@ -46,6 +46,7 @@ SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 GET_RAW_CATEGORIES = "categories"
 GET_RAW_RECEIPTS = "get-raw-receipts"
+API_SHOPS = "shops"
 
 if six.PY3:
     unicode = str
@@ -778,6 +779,18 @@ class DW(Auth):
             ]
         """
         return self._get_raw_data(BRANDS, params={"page_size": chunk_size})
+
+    def raw_shops(self, **kwargs):
+        """
+        Returns
+        ----------
+        Повертає список всіх магазинів клієнта (Ітератор, де кожен елемент це масив)
+            [
+                {"shop_id": "<shop_id>", "name": "<shop_name>"},
+                ...
+            ]
+        """
+        return self._get_raw_data(API_SHOPS, params=kwargs)
 
     def raw_categories(self, chunk_size=10000):
         """
