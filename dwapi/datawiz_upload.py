@@ -34,6 +34,7 @@ SUPPLIER_ACCESS_URL = 'supplier-products'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 BRANDS_URL = 'brands'
 RECEIPT_MARKERS_URL = 'receipt-markers'
+ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
