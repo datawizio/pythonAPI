@@ -19,6 +19,8 @@ CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
 SHOPS_API_URL = 'shops'
+SHOP_GROUPS_API_URL = 'shop-groups'
+SHOP_FORMAT_API_URL = 'shop-format'
 SALES_API_URL = 'sale'
 CATEGORYMANAGER_API_URL = 'category-managers'
 PRICE_API_URL = 'date-prices'
@@ -599,7 +601,7 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=SEPARATOR)
 
-    @_check_columns(['shop_id', 'name', 'address', 'open_date'])
+    @_check_columns(['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"])
     def upload_shops(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція завантажує на сервіс дані магазинів
@@ -619,7 +621,7 @@ class Up_DW(Auth):
         або шлях до файлу *.csv
 
         columns: list,
-                 default: ['shop_id', 'name', 'address', 'open_date']
+                 default: ['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"]
                  Упорядкований список колонок таблиці в файлі <filename>.csv
         splitter: str, default: ";"
                  Розділювач даних в <filename>.csv
@@ -629,9 +631,77 @@ class Up_DW(Auth):
                 'shop_id',
                 'name',
                 'address',
-                'open_date'
+                'open_date',
+                "group_id",
+                "format_id"
             ]
         return self._send_chunk_data(SHOPS_API_URL,
+                                     shops,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['format_id', 'name'])
+    def upload_shop_formats(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервіс дані магазинів
+        Приймає список об’єктів магазина в форматі
+
+        [
+            {
+                'shop_id': <shop_id>,
+                'name': <name>,
+                'address': <address>,
+                'open_date': <open_date>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['format_id', 'name']
+        return self._send_chunk_data(SHOP_FORMAT_API_URL,
+                                     shops,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['group_id', 'name', 'parent_id', 'region_codes'])
+    def upload_shop_groups(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервіс дані магазинів
+        Приймає список об’єктів магазина в форматі
+
+        [
+            {
+                'shop_id': <shop_id>,
+                'name': <name>,
+                'address': <address>,
+                'open_date': <open_date>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['group_id', 'name', 'parent_id', 'region_codes']
+        return self._send_chunk_data(SHOP_GROUPS_API_URL,
                                      shops,
                                      columns=columns,
                                      subcolumns=subcolumns,
