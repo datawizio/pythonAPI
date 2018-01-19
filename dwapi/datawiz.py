@@ -768,7 +768,7 @@ class DW(Auth):
 
         return self._deserialize(self._get(CLIENT), fields={'shops': dict})
 
-    def raw_brands(self, chunk_size=10000):
+    def raw_brands(self, chunk_size=10000, **kwargs):
         """
         Returns
         ----------
@@ -778,7 +778,8 @@ class DW(Auth):
                 ...
             ]
         """
-        return self._get_raw_data(BRANDS, params={"page_size": chunk_size})
+        kwargs.update({"page_size": chunk_size})
+        return self._get_raw_data(BRANDS, params=kwargs)
 
     def raw_shops(self, **kwargs):
         """
@@ -792,7 +793,7 @@ class DW(Auth):
         """
         return self._get_raw_data(API_SHOPS, params=kwargs)
 
-    def raw_categories(self, chunk_size=10000):
+    def raw_categories(self, chunk_size=10000, **kwargs):
         """
         Returns
         ----------
@@ -802,39 +803,41 @@ class DW(Auth):
                 ...
             ]
         """
-        return self._get_raw_data(GET_RAW_CATEGORIES, params={"page_size": chunk_size})
+        kwargs.update({"page_size": chunk_size})
+        return self._get_raw_data(GET_RAW_CATEGORIES, params=kwargs)
 
-    def raw_products(self, chunk_size=10000):
+    def raw_products(self, chunk_size=10000, **kwargs):
         """
             Returns
             ----------
             Повертає список всіх продуктів клієнта (Ітератор, де кожен елемент це масив)
         """
-        return self._get_raw_data(GET_PRODUCT, params={"page_size": chunk_size})
+        kwargs.update({"page_size": chunk_size})
+        return self._get_raw_data(GET_PRODUCT, params=kwargs)
 
     @_check_params
-    def raw_inventory(self, date_from=None, date_to=None, chunk_size=10000):
+    def raw_inventory(self, date_from=None, date_to=None, chunk_size=10000, **kwargs):
         """
             Returns
             ----------
             Повертає залишки клієнта за вибраний період (Ітератор, де кожен елемент це масив)
         """
-        return self._get_raw_data(GET_PRODUCTS_INVENTORY, params={"page_size": chunk_size,
-                                                                  "date_from": date_from,
-                                                                  "date_to": date_to})
+        kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
+        return self._get_raw_data(GET_PRODUCTS_INVENTORY, params=kwargs)
 
     @_check_params
     def sale_items(self,
                    date_from=None,
                    date_to=None,
-                   chunk_size=10000
+                   chunk_size=10000,
+                   **kwargs
                    ):
         page = 1
         has_next = True
 
         while has_next:
-            params = {'page_size': chunk_size, 'page': page, 'date_from': date_from, 'date_to': date_to}
-            data = self._get(GET_RAW_RECEIPTS, params=params)
+            kwargs.update({'page_size': chunk_size, 'page': page, 'date_from': date_from, 'date_to': date_to})
+            data = self._get(GET_RAW_RECEIPTS, params=kwargs)
             results = data.get('results', {"table": [], "has_next": False})
             has_next = results.get("has_next", False)
             page += 1
