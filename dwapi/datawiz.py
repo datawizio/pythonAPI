@@ -44,9 +44,10 @@ SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
+API_SHOPS = "shops"
 GET_RAW_CATEGORIES = "categories"
 GET_RAW_RECEIPTS = "get-raw-receipts"
-API_SHOPS = "shops"
+GET_RAW_INVENTORY = "get-raw-inventory"
 
 if six.PY3:
     unicode = str
@@ -815,6 +816,17 @@ class DW(Auth):
         kwargs.update({"page_size": chunk_size})
         return self._get_raw_data(GET_PRODUCT, params=kwargs)
 
+    def _custom_load(self, url, **params):
+        page = 1
+        has_next = True
+        while has_next:
+            params.update({'page': page})
+            data = self._post(url, data=params)
+            results = data.get('results', {"table": [], "has_next": False})
+            has_next = results.get("has_next", False)
+            page += 1
+            yield results["table"]
+
     @_check_params
     def raw_inventory(self, date_from=None, date_to=None, chunk_size=10000, **kwargs):
         """
@@ -823,7 +835,7 @@ class DW(Auth):
             Повертає залишки клієнта за вибраний період (Ітератор, де кожен елемент це масив)
         """
         kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
-        return self._get_raw_data(GET_PRODUCTS_INVENTORY, params=kwargs)
+        return self._custom_load(GET_RAW_INVENTORY, **kwargs)
 
     @_check_params
     def sale_items(self,
@@ -832,16 +844,8 @@ class DW(Auth):
                    chunk_size=10000,
                    **kwargs
                    ):
-        page = 1
-        has_next = True
-
-        while has_next:
-            kwargs.update({'page_size': chunk_size, 'page': page, 'date_from': date_from, 'date_to': date_to})
-            data = self._get(GET_RAW_RECEIPTS, params=kwargs)
-            results = data.get('results', {"table": [], "has_next": False})
-            has_next = results.get("has_next", False)
-            page += 1
-            yield results["table"]
+        kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
+        return self._custom_load(GET_RAW_RECEIPTS, **kwargs)
 
     @_check_params
     def get_pairs(self,
