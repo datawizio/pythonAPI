@@ -22,6 +22,7 @@ SHOPS_API_URL = 'shops'
 SHOP_GROUPS_API_URL = 'shop-groups'
 SHOP_FORMAT_API_URL = 'shop-format'
 SALES_API_URL = 'sale'
+SALES_ACCESS_API_URL = "sale-products"
 CATEGORYMANAGER_API_URL = 'category-managers'
 PRICE_API_URL = 'date-prices'
 STOCK_API_URL = 'product-inventory'
