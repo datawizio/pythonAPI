@@ -1356,29 +1356,51 @@ class Up_DW(Auth):
                   'cache': cache}
         return self._post('utils', data=params)['results']
 
-    def cache(self, email, date_from=None, date_to=None, date_list=None, shops=None):
+    def cache(self, email, date_from=None, date_to=None, date_list=None, shops=None, cache_list=None):
         """
         Функція запускає на сервері процес кешування
         даних. Після його завершення користувач отримає повідомлення
         на вказану адресу електронної пошти
         """
 
+        if date_list is None:
+            if date_from is not None and date_to is not None:
+                date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
+        if cache_list is None and date_list is not None:
+                if shops is not None:
+                    cache_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
+                else:
+                    cache_list = [{"date": date} for date in date_list]
+        else:
+            cache_list = []
         params = {'function': 'cache_data',
                   'email': email,
-                  'date_from': date_from,
-                  'date_to': date_to,
-                  'date_list': date_list,
-                  'shops': shops}
+                  "data": cache_list
+                  }
         return self._post('utils', data=params)['results']
 
-    def clear_receipts(self, email):
+    def clear_receipts(self, email, date_from=None, date_to=None, date_list=None, shops=None, clear_list=None):
         """
         Функція викликає на сервері процес видалення чеків.
          Після його завершення користувач отримає повідомлення
         на вказану адресу електронної пошти
         """
+
+        if date_list is None:
+            if date_from is not None and date_to is not None:
+                date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
+        if clear_list is None and date_list is not None:
+                if shops is not None:
+                    clear_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
+                else:
+                    clear_list = [{"date": date} for date in date_list]
+        else:
+            clear_list = []
+
         params = {'function': 'clear_receipts',
-                  'email': email}
+                  'email': email,
+                  'data': clear_list
+                  }
         return self._post('utils', data=params)['results']
 
     def clear_client(self, email, dlt=False):
