@@ -1138,47 +1138,69 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter)
 
-    @_check_columns(['shops', 'name', 'description', 'date_from', 'date_to', 'product_id'])
+    @_check_columns(['sale_id', 'name', 'description', 'date_from', 'date_to', 'shops'])
     def upload_sales(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
 
         """
         Функція завантажує на сервер документи переміщення товарів
         Приймає список об`єктів в форматі
 
-        [
-            {
-                "shops": [<shops>,<shops>,...],
+        [       "sale_id": <sale_id>
                 "name": <name>,
                 "description": <description>,
                 "name": <name>,
                 "date_from": <date_from>,
                 "date_to": <date_to>,
-                "products": {
-                                "product_id": <product_id>,
-                                "product_id": <product_id>
-                            }
+                "shops": list<shop>
             }
         ]
          або шлях до файлу *.csv
 
          columns: list,
-                 default: ['shops','name','description','date_from','date_to','product_id']
+                 default: ['name','description','date_from','date_to','product_id']
                  Упорядкований список колонок таблиці в файлі <filename>.csv
         splitter: str, default: ";"
                  Розділювач даних в <filename>.csv
         """
 
         if columns is None:
-            columns = ['shops', 'name', 'description', 'date_from', 'date_to', 'product_id']
+            columns = ['sale_id', 'name', 'description', 'date_from', 'date_to', "shops"]
+        return self._send_chunk_data(SALES_API_URL,
+                                     docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
 
-        group_columns = ['shops', 'name', 'description', 'date_from', 'date_to']
+    @_check_columns(["sale_id", "shop_id", "product_id"])
+    def upload_sale_access(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                           index_col=False):
+        """
+        Функція завантажує на сервіс товари акцій і магазини, в яких ці товари є акційними
+        Приймає список об`єктів в форматі
+        [
+            {
+                "shop_id": <shop_id>,
+                "product_id": <product_id>
+                "sale_id": <sale_id>
+            }
+        ]
 
-        uniq_col = 'name'
+        або шлях до файлу *.csv
 
-        nested_field_name = 'products'
+        columns: list,
+                 default: ['name','description','date_from','date_to','product_id']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
 
-        return self._upload_data_with_nested_object(docs, SALES_API_URL, columns, group_columns, uniq_col,
-                                                    nested_field_name, subcolumns, splitter, skip_rows, index_col)
+        """
+        if columns is None:
+            columns = ["shop_id", "product_id", "sale_id"]
+        return self._send_chunk_data(SALES_ACCESS_API_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['shops', 'identifier', 'name', 'date_from', 'products'])
     def upload_categorymanagers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
