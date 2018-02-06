@@ -46,8 +46,9 @@ SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 API_SHOPS = "shops"
 GET_RAW_CATEGORIES = "categories"
-GET_RAW_RECEIPTS = "receipts-detail"
-GET_RAW_INVENTORY = "inventory-detail"
+RECEIPTS_DETAIL = "receipts-detail"
+INVENTORY_DETAIL = "inventory-detail"
+PROMOTION_DETAIL = "promotion-access-detail"
 
 if six.PY3:
     unicode = str
@@ -835,7 +836,7 @@ class DW(Auth):
             Повертає залишки клієнта за вибраний період (Ітератор, де кожен елемент це масив)
         """
         kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
-        return self._custom_load(GET_RAW_INVENTORY, **kwargs)
+        return self._custom_load(INVENTORY_DETAIL, **kwargs)
 
     @_check_params
     def sale_items(self,
@@ -845,7 +846,17 @@ class DW(Auth):
                    **kwargs
                    ):
         kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
-        return self._custom_load(GET_RAW_RECEIPTS, **kwargs)
+        return self._custom_load(RECEIPTS_DETAIL, **kwargs)
+
+    @_check_params
+    def promotion_access(self,
+                         date_from=None,
+                         date_to=None,
+                         chunk_size=10000,
+                         **kwargs
+                         ):
+        kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
+        return self._custom_load(PROMOTION_DETAIL, **kwargs)
 
     @_check_params
     def get_pairs(self,
