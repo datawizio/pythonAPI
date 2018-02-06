@@ -46,8 +46,8 @@ SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 API_SHOPS = "shops"
 GET_RAW_CATEGORIES = "categories"
-GET_RAW_RECEIPTS = "get-raw-receipts"
-GET_RAW_INVENTORY = "get-raw-inventory"
+GET_RAW_RECEIPTS = "receipts-detail"
+GET_RAW_INVENTORY = "inventory-detail"
 
 if six.PY3:
     unicode = str
