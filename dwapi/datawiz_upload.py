@@ -1394,7 +1394,7 @@ class Up_DW(Auth):
                     clear_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
                 else:
                     clear_list = [{"date": date} for date in date_list]
-        else:
+        if clear_list is None:
             clear_list = []
 
         params = {'function': 'clear_receipts',
