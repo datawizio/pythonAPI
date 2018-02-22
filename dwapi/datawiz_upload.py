@@ -36,6 +36,10 @@ SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 BRANDS_URL = 'brands'
 RECEIPT_MARKERS_URL = 'receipt-markers'
 ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
+STOCK_TAKING_DOCUMENT = 'stock-taking-documents'
+INCOMING_DOCUMENT = 'incoming-documents'
+LOSS_DOCUMENT = 'loss-documents'
+LOSS_TYPE_URL = 'loss-types'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
@@ -1081,7 +1085,7 @@ class Up_DW(Auth):
     def upload_brands(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
-        Функція завантажує на сервер документи переміщення товарів
+        Функція завантажує на сервер бренди
         Приймає список об`єктів в форматі
 
         [
@@ -1112,7 +1116,7 @@ class Up_DW(Auth):
     def upload_receipt_markers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
-        Функція завантажує на сервер документи переміщення товарів
+        Функція завантажує на сервер мітки чеків
         Приймає список об`єктів в форматі
 
         [
@@ -1143,7 +1147,7 @@ class Up_DW(Auth):
     def upload_sales(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1, index_col=False):
 
         """
-        Функція завантажує на сервер документи переміщення товарів
+        Функція завантажує на сервер данні по акціям
         Приймає список об`єктів в форматі
 
         [       "sale_id": <sale_id>
@@ -1327,6 +1331,213 @@ class Up_DW(Auth):
             columns = ['document_id', 'supplier_id', 'shop_id', 'date', 'receive_document_id', 'total_price']
 
         return self._send_chunk_data(ORDER_PAY_DOCUMENTS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['document_id', 'date', 'shop_id', 'stuff_id', 'product_id', 'stock_qty', 'fact_qty'])
+    def upload_stock_taking_documents(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                                      index_col=False):
+
+        """
+        Функція завантажує на сервер документи інвентаризації
+        Приймає список об`єктів в форматі
+
+         [
+            {
+                "document_id": <document_id>,
+                "document_date": <document_date>,
+                "shop_id": <shop_id>,
+                "stuff_id": <stuff_id>,
+                "products": {
+                            "product_id":<product_id>,
+                            "stock_qty": <stock_qty>,
+                            "fact_qty": <fact_qty>
+                         }
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['document_id', 'date',
+                           'shop_id', 'stuff_id',
+                           'product_id',
+                           'stock_qty', 'fact_qty']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['document_id', 'date', 'shop_id', 'stuff_id', 'product_id', 'stock_qty', 'fact_qty']
+
+        group_columns = [
+            'document_id',
+            'date',
+            'shop_id',
+        ]
+
+        if 'stuff_id' in columns:
+            group_columns.append('stuff_id')
+
+        uniq_col = 'document_id'
+
+        nested_field_name = 'products'
+
+        return self._upload_data_with_nested_object(docs, STOCK_TAKING_DOCUMENT, columns, group_columns, uniq_col,
+                                                    nested_field_name, subcolumns, splitter, skip_rows, index_col)
+
+    @_check_columns(['document_id', 'date', 'shop_id', 'stuff_id', 'product_id', 'qty', 'price', 'total_price'])
+    def upload_incoming_documents(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                                  index_col=False):
+
+        """
+        Функція завантажує на сервер документи оприходування (внаслідок інвентаризації)
+        Приймає список об`єктів в форматі
+
+         [
+            {
+                "document_id": <document_id>,
+                "document_date": <document_date>,
+                "shop_id": <shop_id>,
+                "stuff_id": <stuff_id>,
+                "products": {
+                            "product_id":<product_id>,
+                            "qty": <qty>,
+                            "price": <price>,
+                            "total_price": <total_price>
+                         }
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['document_id', 'date',
+                           'shop_id', 'stuff_id',
+                           'product_id', 'qty',
+                           'price', 'total_price']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['document_id', 'date', 'shop_id', 'stuff_id', 'product_id', 'qty', 'price', 'total_price']
+
+        group_columns = [
+            'document_id',
+            'date',
+            'shop_id',
+        ]
+
+        if 'stuff_id' in columns:
+            group_columns.append('stuff_id')
+
+        uniq_col = 'document_id'
+
+        nested_field_name = 'products'
+
+        return self._upload_data_with_nested_object(docs, INCOMING_DOCUMENT, columns, group_columns, uniq_col,
+                                                    nested_field_name, subcolumns, splitter, skip_rows, index_col)
+
+    @_check_columns(['document_id',
+                     'loss_type_id',
+                     'date',
+                     'shop_id',
+                     'stuff_id',
+                     'note',
+                     'product_id',
+                     'qty',
+                     'price',
+                     'total_price'])
+    def upload_loss_documents(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                              index_col=False):
+
+        """
+        Функція завантажує на сервер документи списань
+        Приймає список об`єктів в форматі
+
+         [
+            {
+                "document_id": <document_id>,
+                "loss_type_id": <loss_type_id>,
+                "document_date": <document_date>,
+                "shop_id": <shop_id>,
+                "stuff_id": <stuff_id>,
+                "note": <note>,
+                "products": {
+                            "product_id":<product_id>,
+                            "qty": <qty>,
+                            "price": <price>,
+                            "total_price": <total_price>
+                         }
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['document_id', 'loss_type_id',
+                           'date', 'shop_id',
+                           'stuff_id', 'note',
+                           'product_id', 'qty',
+                           'price', 'total_price']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['document_id', 'loss_type_id', 'date', 'shop_id', 'stuff_id',
+                       'note', 'product_id', 'qty', 'price', 'total_price']
+
+        group_columns = [
+            'document_id',
+            'loss_type_id',
+            'date',
+            'shop_id',
+        ]
+
+        if 'stuff_id' in columns:
+            group_columns.append('stuff_id')
+
+        if 'note' in columns:
+            group_columns.append('note')
+
+        uniq_col = 'document_id'
+
+        nested_field_name = 'products'
+
+        return self._upload_data_with_nested_object(docs, LOSS_DOCUMENT, columns, group_columns, uniq_col,
+                                                    nested_field_name, subcolumns, splitter, skip_rows, index_col)
+
+    @_check_columns(['loss_type_id', 'name'])
+    def upload_loss_types(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер типи списань (втрат)
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "loss_type_id": <loss_type_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['loss_type_id',
+                           'name'
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['loss_type_id', 'name']
+
+        return self._send_chunk_data(LOSS_TYPE_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter)
