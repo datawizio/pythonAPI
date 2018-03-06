@@ -360,7 +360,7 @@ class Up_DW(Auth):
                                              nested_field_name, subcolumns, splitter, skip_rows, index_col)
         return True
 
-    @_check_columns(['category_id', 'name', 'parent_id'])
+    @_check_columns(['category_id', 'name', 'parent_id', 'hidden'])
     def upload_categories(self, categories, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція відправляє на сервер дані категорій
@@ -371,6 +371,7 @@ class Up_DW(Auth):
                    'category_id': <category_id>,
                    'name': <name>,
                    'parent_id': <parent_id>,
+                   'hidden': <hidden>,
             }
             ...
         ]
@@ -378,7 +379,7 @@ class Up_DW(Auth):
         або шлях до файлу *.csv
 
         columns: list,
-                 default: ['category_id', 'name', 'parent_id']
+                 default: ['category_id', 'name', 'parent_id', 'hidden']
                  Упорядкований список колонок таблиці в файлі <filename>.csv
         splitter: str, default: ";"
                  Розділювач даних в <filename>.csv
@@ -387,7 +388,8 @@ class Up_DW(Auth):
         if columns is None:
             columns = ['category_id',
                        'name',
-                       'parent_id'
+                       'parent_id',
+                       'hidden'
                        ]
         self._send_chunk_data(CATEGORIES_API_URL,
                               categories,
