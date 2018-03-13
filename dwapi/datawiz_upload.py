@@ -24,6 +24,7 @@ SHOP_FORMAT_API_URL = 'shop-format'
 SALES_API_URL = 'sale'
 SALES_ACCESS_API_URL = "sale-products"
 CATEGORYMANAGER_API_URL = 'category-managers'
+CATEGORYMANAGERACCESS_API_URL = 'categorymanager-products'
 PRICE_API_URL = 'date-prices'
 STOCK_API_URL = 'product-inventory'
 PURCHASE_DOCUMENT_URL = 'purchase-documents'
@@ -1237,6 +1238,38 @@ class Up_DW(Auth):
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter, chunk_size=1)
+
+    @_check_columns(["manager_id", "shop_id", "product_id","date_from", "date_to"])
+    def upload_categorymanageraccess(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                           index_col=False):
+        """
+        Функція завантажує на сервіс товари менеджера і магазини, за які цей менеджер відповідає
+        Приймає список об`єктів в форматі
+        [
+            {
+                "shop_id": <shop_id>,
+                "product_id": <product_id>,
+                "manager_id": <manager_id>,
+                "date_from":  <date_from>,
+                "date_to":  <date_to>
+            }
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['manager_id','shop_id','product_id','date_from','date_to']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+
+        """
+        if columns is None:
+            columns = ["manager_id", "shop_id", "product_id","date_from","date_to"]
+        return self._send_chunk_data(CATEGORYMANAGERACCESS_API_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(
         ['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id', 'qty', 'price',
