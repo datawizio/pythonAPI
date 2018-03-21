@@ -35,6 +35,7 @@ CONTRACTOR_URL = 'contractors'
 SUPPLIER_ACCESS_URL = 'supplier-products'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 BRANDS_URL = 'brands'
+PRODUCERS_URL = 'producers'
 RECEIPT_MARKERS_URL = 'receipt-markers'
 ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
 STOCK_TAKING_DOCUMENT = 'stock-taking-documents'
@@ -1111,6 +1112,37 @@ class Up_DW(Auth):
             columns = ['brand_id', 'name']
 
         return self._send_chunk_data(BRANDS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['producer_id', 'name'])
+    def upload_producers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер виробників
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "producer_id": <producer_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['producer_id', 'name',
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['producer_id', 'name']
+
+        return self._send_chunk_data(PRODUCERS_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter)
