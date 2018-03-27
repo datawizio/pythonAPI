@@ -718,7 +718,7 @@ class DW(Auth):
         """
         if not isinstance(by, (str, unicode)):
             raise TypeError("Incorrect param type")
-        if not by in ["product", "category", "both"]:
+        if by not in ["product", "category", "barcode", "all"]:
             raise TypeError("Incorrect param type")
         params = {'q': query, 'select': by}
         if level is not None:
