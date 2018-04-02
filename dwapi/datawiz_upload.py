@@ -1681,6 +1681,31 @@ class Up_DW(Auth):
                   }
         return self._post('utils', data=params)['results']
 
+
+    def clear_product_inventory(self, email, date_from=None, date_to=None, date_list=None, shops=None, clear_list=None):
+        """
+        Функція викликає на сервері процес видалення залишків.
+         Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
+        """
+
+        if date_list is None:
+            if date_from is not None and date_to is not None:
+                date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
+        if clear_list is None and date_list is not None:
+                if shops is not None:
+                    clear_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
+                else:
+                    clear_list = [{"date": date} for date in date_list]
+        if clear_list is None:
+            clear_list = []
+
+        params = {'function': 'clear_product_inventory',
+                  'email': email,
+                  'data': clear_list
+                  }
+        return self._post('utils', data=params)['results']
+
     def clear_client(self, email, dlt=False):
         params = {'function': 'clear_client',
                   'dlt': dlt,
