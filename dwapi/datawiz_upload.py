@@ -42,6 +42,7 @@ STOCK_TAKING_DOCUMENT = 'stock-taking-documents'
 INCOMING_DOCUMENT = 'incoming-documents'
 LOSS_DOCUMENT = 'loss-documents'
 LOSS_TYPE_URL = 'loss-types'
+PEOPLE_TRAFFIC_URL = 'people-traffic'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
@@ -1605,6 +1606,38 @@ class Up_DW(Auth):
             columns = ['loss_type_id', 'name']
 
         return self._send_chunk_data(LOSS_TYPE_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['traffic_id', 'shop_id', 'date'])
+    def upload_people_traffic(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервіс трафік клієнтів по магазинам
+        Приймає список об’єктів в форматі
+
+        [
+            {
+                'traffic_id': <traffic_id>,
+                'shop_id': <shop_id>,
+                'date': <date>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['traffic_id', 'shop_id', 'date']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['traffic_id', 'shop_id', 'date']
+        return self._send_chunk_data(PEOPLE_TRAFFIC_URL,
+                                     shops,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter)
