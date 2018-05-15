@@ -187,15 +187,15 @@ class DW(Auth):
 
         page = 1
         has_next = True
-        # print has_next
+
         while has_next:
             params.update({'page': page})
             data = self._get(url, params=params, data=params_data)
-            results = data.get('results', None)
-            if results:
-                has_next = True if data['next'] else False
-                page += 1
-                yield [self._prepare_raw_results(x) for x in results]
+            results = data.get('results', [])
+
+            has_next = bool(data.get('next'))
+            page += 1
+            yield [self._prepare_raw_results(x) for x in results]
 
     def _get_data_by_daterange(self, func, date_from, date_to):
 
