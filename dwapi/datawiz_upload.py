@@ -233,7 +233,7 @@ class Up_DW(Auth):
                 except APIUploadError as error:
                     # self._upload_data_recursively
                     self.logging.error('%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error))
-                    raise '%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error)
+                    raise APIUploadError('%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error))
                 chunk_num += 1
             return True
         elif isinstance(data, str) and os.path.isfile(data):
