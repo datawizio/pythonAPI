@@ -14,6 +14,7 @@ from functools import wraps
 RECEIPTS_API_URI = 'receipts'
 CATEGORIES_API_URL = 'categories'
 PRODUCTS_API_URL = 'products'
+PRODUCT_MATRIX_API_URL = 'product-matrix'
 UNITS_API_URL = 'units'
 CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
@@ -416,7 +417,7 @@ class Up_DW(Auth):
 
         [
             {
-                   'product_id': <category_id>,
+                   'product_id': <product_id>,
                    'barcode': <code>,
                    'article': <article>,
                    'name': <name>,
@@ -465,6 +466,48 @@ class Up_DW(Auth):
 
         return self._send_chunk_data(PRODUCTS_API_URL,
                                      products,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
+    @_check_columns(['shop_id', 'product_id', 'date_from'])
+    def upload_product_matrix(self, product_matrix, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по асортиментній матриці
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'product_id': <product_id>,
+                   'shop_id': <shop_id>
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'product_id',
+                        'shop_id'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'product_id',
+                'shop_id',
+                'date_from',
+                'date_to',
+            ]
+
+        return self._send_chunk_data(PRODUCT_MATRIX_API_URL,
+                                     product_matrix,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter
