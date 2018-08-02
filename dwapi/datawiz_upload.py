@@ -302,6 +302,7 @@ class Up_DW(Auth):
 
         [{
                    'order_id': <order_id>,
+                   'date_open': <date_open>,
                    'date': <date>,
                    'terminal_id': <terminal_id>,
                    'cartitems': [
@@ -338,6 +339,7 @@ class Up_DW(Auth):
                 'loyalty_id',
                 'order_id',
                 'order_no',
+                'date_open',
                 'date',
                 'product_id',
                 'base_price',
@@ -350,10 +352,14 @@ class Up_DW(Auth):
             'terminal_id',
             'cashier_id',
             'order_id',
-            'date']
+            'date'
+        ]
 
         if 'loyalty_id' in columns:
             group_columns.append('loyalty_id')
+
+        if 'date_open' in columns:
+            group_columns.append('date_open')
 
         uniq_col = 'order_id'
 
@@ -1702,9 +1708,10 @@ class Up_DW(Auth):
                 date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
         if clear_list is None and date_list is not None:
                 if shops is not None:
-                    clear_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d'), "shop_id": shop}
+                                  for shop in shops for date in date_list]
                 else:
-                    clear_list = [{"date": date} for date in date_list]
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d')} for date in date_list]
         if clear_list is None:
             clear_list = []
 
@@ -1713,7 +1720,6 @@ class Up_DW(Auth):
                   'data': clear_list
                   }
         return self._post('utils', data=params)['results']
-
 
     def clear_product_inventory(self, email, date_from=None, date_to=None, date_list=None, shops=None, clear_list=None):
         """
@@ -1727,9 +1733,10 @@ class Up_DW(Auth):
                 date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
         if clear_list is None and date_list is not None:
                 if shops is not None:
-                    clear_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d'), "shop_id": shop}
+                                  for shop in shops for date in date_list]
                 else:
-                    clear_list = [{"date": date} for date in date_list]
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d')} for date in date_list]
         if clear_list is None:
             clear_list = []
 
