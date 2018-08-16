@@ -19,6 +19,7 @@ UNITS_API_URL = 'units'
 CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
+LOYALTY_GROUP_API_URL = 'loyalty-group'
 SHOPS_API_URL = 'shops'
 SHOP_GROUPS_API_URL = 'shop-groups'
 SHOP_FORMAT_API_URL = 'shop-format'
@@ -556,7 +557,8 @@ class Up_DW(Auth):
                    'loyalty_id': <loyalty_id>,
                    'cardno': <cardno>,
                    'client_name': <client_name>,
-                   'client_birthday': <client_birthday>
+                   'client_birthday': <client_birthday>,
+                   'group_id': <group_id>
 
             }
             ...
@@ -574,7 +576,8 @@ class Up_DW(Auth):
                            'sex',
                            'client_birthday',
                            'address',
-                           'email'
+                           'email',
+                           'group_id'
                            ]
                  Упорядкований список колонок таблиці в файлі <filename>.csv
         splitter: str, default: ";"
@@ -589,7 +592,8 @@ class Up_DW(Auth):
                        'is_male',
                        'address',
                        'email',
-                       'phone'
+                       'phone',
+                       'group_id'
                        ]
 
         return self._send_chunk_data(LOYALTY_API_URL,
@@ -598,6 +602,37 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter
                                      )
+
+    @_check_columns(['group_id', 'name'])
+    def upload_loyalty_groups(self, loyalty_groups, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по группам клієнтів програми лояльності
+        Приймає список об’єктів в форматі
+
+        [
+            {
+                   'group_id': <group_id>,
+                   'name': <name>,
+            }
+            ...
+        ]
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['group_id', 'group_id']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['group_id', 'name']
+        return self._send_chunk_data(LOYALTY_GROUP_API_URL,
+                                     loyalty_groups,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['cashier_id', 'name'])
     def upload_cashiers(self, cashiers, columns=None, subcolumns=None, splitter=SEPARATOR):
