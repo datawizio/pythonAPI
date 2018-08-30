@@ -36,6 +36,7 @@ SUPPLIER_URL = 'suppliers'
 CONTRACTOR_URL = 'contractors'
 SUPPLIER_ACCESS_URL = 'supplier-products'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
+SUPPLIER_BONUS = 'supplier-bonus'
 BRANDS_URL = 'brands'
 PRODUCERS_URL = 'producers'
 RECEIPT_MARKERS_URL = 'receipt-markers'
@@ -1452,6 +1453,60 @@ class Up_DW(Auth):
 
         return self._upload_data_with_nested_object(docs, SUPPLIER_REFUNDS_URL, columns, group_columns, uniq_col,
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col)
+
+    @_check_columns(['supplierbonus_id', 'supplier_id', 'shop_id', 'bonus_sum', 'date_from', 'date_to'])
+    def upload_supplier_bonus(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер ретро бонусы
+        Приймає список об`єктів в форматі
+
+         [
+            {
+                "supplierbonus_id": <document_id>,
+                "shop_id": <shop_id>,
+                "supplier_id": <supplier_id>,
+                "bonus_sum": <bonus_sum>,
+                "date_from": <date_from>
+                "date_to": <date_to>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: [
+                    'supplierbonus_id',
+                    'supplier_id',
+                    'shop_id',
+                    'product_id',
+                    'category_manager_id'
+                    'bonus_sum',
+                    'date_from',
+                    'date_to'
+                 ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'supplierbonus_id',
+                'supplier_id',
+                'shop_id',
+                'product_id',
+                'category_manager_id' 
+                'bonus_sum',
+                'date_from',
+                'date_to'
+            ]
+
+        return self._send_chunk_data(SUPPLIER_BONUS,
+                                     docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
 
     @_check_columns(['document_id', 'supplier_id', 'shop_id', 'date', 'receive_document_id', 'total_price'])
     def upload_order_pay_documents(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
