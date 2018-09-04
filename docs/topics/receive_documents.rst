@@ -222,7 +222,7 @@ qty                 число       да           Количество тов�
 
 .. code-block:: bash
 
-    $ curl -d '{"shop_id": "44", "products": [{"price": "20.1500", "price_total": "20.1500", "product_id": "763530", "qty": "1.0000"}], "document_date": "2018-03-21T10:48:48", "supplier_id": "17589", "document_number": "S10-00007776", "responsible": "Якоб Фон Петрович", "items_qty": "28.0000", "document_id": "568711", "price_total": "628.2000"}' -H "Content-Type: application/json" -H "Authorization: Bearer jhMisdKPKo9hXeTuSvqFd2TL7vel62" -X POST https://api.datawiz.io/api/v1/receive-documents/
+    $ curl -d '{"shop_id": "44", "products": [{"price": "20.1500", "price_total": "20.1500", "product_id": "763530", "qty": "1.0000"}], "document_date": "2018-03-21T10:48:48", "supplier_id": "17589", "document_number": "S10-00007776", "responsible": "Якоб Фон Петрович", "items_qty": "1.0000", "document_id": "568711", "price_total": "20.1500"}' -H "Content-Type: application/json" -H "Authorization: Bearer jhMisdKPKo9hXeTuSvqFd2TL7vel62" -X POST https://api.datawiz.io/api/v1/receive-documents/
 
 Пример ответа:
 
@@ -250,9 +250,9 @@ qty                 число       да           Количество тов�
         'supplier_id': 17589,
         'document_number': 'S10-00007776',
         'responsible': 'Якоб Фон Петрович',
-        'items_qty': 28.0000,
+        'items_qty': 1.0000,
         'document_id': 568711,
-        'price_total': 628.2000
+        'price_total': 20.1500,
         'products': [
             {
                 'price': 20.1500,
