@@ -15,6 +15,8 @@ RECEIPTS_API_URI = 'receipts'
 CATEGORIES_API_URL = 'categories'
 PRODUCTS_API_URL = 'products'
 PRODUCT_MATRIX_API_URL = 'product-matrix'
+MARKERS_API_URL = 'markers'
+MARKER_PRODUCTS_API_URL = 'marker-products'
 UNITS_API_URL = 'units'
 CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
@@ -510,6 +512,91 @@ class Up_DW(Auth):
 
         return self._send_chunk_data(PRODUCT_MATRIX_API_URL,
                                      product_matrix,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
+    @_check_columns(['marker_id', 'name', 'parent_id'])
+    def upload_markers(self, markers, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по маркерам
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'marker_id': <product_id>,
+                   'name': <shop_id>,
+                   'parent_id': <parent_id>
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'marker_id',
+                        'name',
+                        'status',
+                        'parent_id'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'marker_id',
+                'name',
+                'status',
+                'parent_id'
+            ]
+
+        return self._send_chunk_data(MARKERS_API_URL,
+                                     markers,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
+    @_check_columns(['marker_id', 'product_id'])
+    def upload_marker_products(self, marker_products, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по товарам маркерів
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'marker_id': <marker_id>,
+                   'product_id': <product_id>
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'marker_id',
+                        'product_id'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'marker_id',
+                'product_id'
+            ]
+
+        return self._send_chunk_data(MARKER_PRODUCTS_API_URL,
+                                     marker_products,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter
