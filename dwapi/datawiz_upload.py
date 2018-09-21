@@ -1972,6 +1972,16 @@ class Up_DW(Auth):
                   'email': email}
         return self._post('utils', data=params)['results']
 
+    def run_notifications(self):
+        """
+        Функція запускає на сервері процес створення сповіщень для сервісу BES
+        """
+
+        params = {
+            'function': 'run_notifications'
+        }
+        return self._post('utils', data=params)['results']
+
     def upload_data(self, path=None):
 
         if path is None:
