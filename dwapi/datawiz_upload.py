@@ -5,6 +5,7 @@ from .datawiz_auth import Auth, APIGetError, APIUploadError
 import pandas
 import os
 import math
+import six
 # Потрібно перезавантажити модуль, щоб лог працював в ipython notebook
 # Це звязано з тим, що logging.basicConfig звертається до того ж
 # StreamHandler, що і notebook
@@ -43,6 +44,9 @@ LOSS_TYPE_URL = 'loss-types'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
+
+if six.PY3:
+    xrange = range
 
 
 class Up_DW(Auth):
