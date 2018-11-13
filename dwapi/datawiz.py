@@ -49,6 +49,7 @@ GET_RAW_CATEGORIES = "categories"
 RECEIPTS_DETAIL = "receipts-detail"
 INVENTORY_DETAIL = "inventory-detail"
 PROMOTION_DETAIL = "promotion-access-detail"
+OLAP_REPORT = "olap-report"
 
 if six.PY3:
     unicode = str
@@ -169,6 +170,10 @@ class DW(Auth):
                                'call': lambda x: x},
                   'window': {'types': int,
                              'call': lambda x: x},
+                  'join': {'types': bool,
+                           'call': lambda x: bool(x)},
+                  'documents': {'types': dict,
+                                'call': lambda x: x},
 
                   }
         return wrapper
@@ -1587,6 +1592,52 @@ class DW(Auth):
         if not result:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
+
+    @_check_params
+    def get_olap_report(self,
+                        documents=None,
+                        shops=None,
+                        date_from=None,
+                        date_to=None,
+                        join=None):
+        """
+        Parameters
+        -----------
+        documents: {
+            "<doc_type>": {
+                "group_by": [<group_by_column>, ..],
+                "agg": {
+                    "<agg_column>": "<agg_func>",
+                    ...,
+                },
+            ...
+        }
+            <doc_type>: purchases, receives, relocates, supplier_refunds, stocktaking, incoming, losses
+            <group_by_column>: date, shop_id (shop_sender_id', shop_receiver_id для relocates), product_id
+            <agg_column>: qty, price, total_price
+            <agg_func>: sum, mean, max, min, count
+
+        shops:
+        Id магазину, або список id
+        date_from: datetime, str {%Y-%m-%d}
+        Початкова дата вибірки
+        date_to: datetime, str {%Y-%m-%d}
+        Кінцева дата вибірки
+        join: bool
+        Об'єднувати таблиці в одну
+
+        """
+        params = documents.copy()
+
+        params.update({
+            'shops': shops,
+            'date_from': date_from,
+            'date_to': date_to,
+            'join': join
+        })
+
+        result = self._post(OLAP_REPORT, data=params)['results']
+        return {document_type: pd.DataFrame.from_records(data) for document_type, data in result.items()}
 
     def _zipdir(self, path, ziph):
         for root, dirs, files in os.walk(path):
