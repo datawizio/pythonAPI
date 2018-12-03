@@ -1971,6 +1971,31 @@ class Up_DW(Auth):
                   }
         return self._post('utils', data=params)['results']
 
+    def clear_documents(self, email, document_type, clear_list=None):
+        """
+        Функція викликає на сервері процес видалення залишків.
+         Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
+
+        clear_list = [{'dt': <date>, 'shop_id': <shop_id>}, ...]
+
+        """
+
+        available_document_types = (
+            'receipts', 'inventory', 'purchases', 'receives', 'supplier_refunds', 'stocktaking', 'incoming', 'losses'
+        )
+        assert document_type in available_document_types, 'Invalid `document_type` argument specified'
+
+        clear_list = clear_list or []
+
+        params = {
+            'function': 'clear_documents',
+            'email': email,
+            'data': clear_list,
+            'document_type': document_type
+        }
+        return self._post('utils', data=params)['results']
+
     def clear_client(self, email, dlt=False):
         params = {'function': 'clear_client',
                   'dlt': dlt,

@@ -1612,9 +1612,9 @@ class DW(Auth):
                 },
             ...
         }
-            <doc_type>: purchases, receives, relocates, supplier_refunds, stocktaking, incoming, losses
-            <group_by_column>: date, shop_id (shop_sender_id', shop_receiver_id для relocates), product_id
-            <agg_column>: qty, price, total_price
+            <doc_type>: purchases, inventory, receives, relocates, supplier_refunds, stocktaking, incoming, losses
+            <group_by_column>: date, shop_id (shop_sender_id, shop_receiver_id для relocates), product_id
+            <agg_column>: qty, price (original_price для inventory), total_price (stock_total_price для inventory), profit (для receipts)
             <agg_func>: sum, mean, max, min, count
 
         shops:
@@ -1627,13 +1627,14 @@ class DW(Auth):
         Об'єднувати таблиці в одну
 
         """
+        documents = documents or {}
         params = documents.copy()
 
         params.update({
             'shops': shops,
             'date_from': date_from,
             'date_to': date_to,
-            'join': join
+            'join': join or False
         })
 
         result = self._post(OLAP_REPORT, data=params)['results']
