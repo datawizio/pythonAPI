@@ -23,6 +23,7 @@ CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
 LOYALTY_GROUP_API_URL = 'loyalty-group'
+LOYALTY_FORMAT_API_URL = 'loyalty-format'
 SHOPS_API_URL = 'shops'
 SHOP_GROUPS_API_URL = 'shop-groups'
 SHOP_FORMAT_API_URL = 'shop-format'
@@ -695,6 +696,37 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter
                                      )
+
+    @_check_columns(['format_id', 'name'])
+    def upload_loyalty_formats(self, formats, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервіс дані по форматам клієнтів ПЛ
+        Приймає список об’єктів магазина в форматі
+
+        [
+            {
+                'format_id': <format_id>,
+                'name': <name>,
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['format_id', 'name']
+        return self._send_chunk_data(LOYALTY_FORMAT_API_URL,
+                                     formats,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['group_id', 'name'])
     def upload_loyalty_groups(self, loyalty_groups, columns=None, subcolumns=None, splitter=SEPARATOR):
