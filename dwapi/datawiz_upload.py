@@ -40,6 +40,7 @@ SUPPLIER_URL = 'suppliers'
 CONTRACTOR_URL = 'contractors'
 SUPPLIER_ACCESS_URL = 'supplier-products'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
+SUPPLIER_BONUS_TYPE_URL = 'supplier-bonus-types'
 SUPPLIER_BONUS = 'supplier-bonus'
 BRANDS_URL = 'brands'
 PRODUCERS_URL = 'producers'
@@ -1578,6 +1579,37 @@ class Up_DW(Auth):
         return self._upload_data_with_nested_object(docs, SUPPLIER_REFUNDS_URL, columns, group_columns, uniq_col,
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col)
 
+    @_check_columns(['bonus_type_id', 'name'])
+    def upload_supplierbonus_types(self, types, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер мітки чеків
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "bonus_type_id": <bonus_type_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['bonus_type_id', 'name',
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['bonus_type_id', 'name']
+
+        return self._send_chunk_data(SUPPLIER_BONUS_TYPE_URL, types,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
     @_check_columns(['supplierbonus_id', 'supplier_id', 'shop_id', 'bonus_sum', 'date_from', 'date_to'])
     def upload_supplier_bonus(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
 
@@ -1591,6 +1623,7 @@ class Up_DW(Auth):
                 "shop_id": <shop_id>,
                 "supplier_id": <supplier_id>,
                 "bonus_sum": <bonus_sum>,
+                "bonus_type_id": <bonus_type_id>,
                 "date_from": <date_from>
                 "date_to": <date_to>
             }
@@ -1603,7 +1636,8 @@ class Up_DW(Auth):
                     'supplier_id',
                     'shop_id',
                     'product_id',
-                    'category_manager_id'
+                    'category_manager_id',
+                    'bonus_type_id',
                     'bonus_sum',
                     'date_from',
                     'date_to'
@@ -1619,7 +1653,8 @@ class Up_DW(Auth):
                 'supplier_id',
                 'shop_id',
                 'product_id',
-                'category_manager_id' 
+                'category_manager_id'
+                'bonus_type_id',
                 'bonus_sum',
                 'date_from',
                 'date_to'
