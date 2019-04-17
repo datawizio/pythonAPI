@@ -192,15 +192,15 @@ class DW(Auth):
 
         page = 1
         has_next = True
-        # print has_next
+
         while has_next:
             params.update({'page': page})
             data = self._get(url, params=params, data=params_data)
-            results = data.get('results', None)
-            if results:
-                has_next = True if data['next'] else False
-                page += 1
-                yield [self._prepare_raw_results(x) for x in results]
+            results = data.get('results', [])
+
+            has_next = bool(data.get('next'))
+            page += 1
+            yield [self._prepare_raw_results(x) for x in results]
 
     def _get_data_by_daterange(self, func, date_from, date_to):
 
@@ -723,7 +723,7 @@ class DW(Auth):
         """
         if not isinstance(by, (str, unicode)):
             raise TypeError("Incorrect param type")
-        if not by in ["product", "category", "both"]:
+        if by not in ["product", "category", "barcode", "all"]:
             raise TypeError("Incorrect param type")
         params = {'q': query, 'select': by}
         if level is not None:
@@ -1612,9 +1612,9 @@ class DW(Auth):
                 },
             ...
         }
-            <doc_type>: purchases, receives, relocates, supplier_refunds, stocktaking, incoming, losses
-            <group_by_column>: date, shop_id (shop_sender_id', shop_receiver_id для relocates), product_id
-            <agg_column>: qty, price, total_price
+            <doc_type>: purchases, inventory, receives, relocates, supplier_refunds, stocktaking, incoming, losses
+            <group_by_column>: date, shop_id (shop_sender_id, shop_receiver_id для relocates), product_id
+            <agg_column>: qty, price (original_price для inventory), total_price (stock_total_price для inventory), profit (для receipts)
             <agg_func>: sum, mean, max, min, count
 
         shops:
@@ -1627,13 +1627,14 @@ class DW(Auth):
         Об'єднувати таблиці в одну
 
         """
+        documents = documents or {}
         params = documents.copy()
 
         params.update({
             'shops': shops,
             'date_from': date_from,
             'date_to': date_to,
-            'join': join
+            'join': join or False
         })
 
         result = self._post(OLAP_REPORT, data=params)['results']

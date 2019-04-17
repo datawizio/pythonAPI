@@ -15,16 +15,22 @@ from functools import wraps
 RECEIPTS_API_URI = 'receipts'
 CATEGORIES_API_URL = 'categories'
 PRODUCTS_API_URL = 'products'
+PRODUCT_MATRIX_API_URL = 'product-matrix'
+MARKERS_API_URL = 'markers'
+MARKER_PRODUCTS_API_URL = 'marker-products'
 UNITS_API_URL = 'units'
 CASHIERS_API_URL = 'cashiers'
 TERMINALS_API_URL = 'terminals'
 LOYALTY_API_URL = 'loyalty'
+LOYALTY_GROUP_API_URL = 'loyalty-group'
+LOYALTY_FORMAT_API_URL = 'loyalty-format'
 SHOPS_API_URL = 'shops'
 SHOP_GROUPS_API_URL = 'shop-groups'
 SHOP_FORMAT_API_URL = 'shop-format'
 SALES_API_URL = 'sale'
 SALES_ACCESS_API_URL = "sale-products"
 CATEGORYMANAGER_API_URL = 'category-managers'
+CATEGORYMANAGERACCESS_API_URL = 'categorymanager-products'
 PRICE_API_URL = 'date-prices'
 STOCK_API_URL = 'product-inventory'
 PURCHASE_DOCUMENT_URL = 'purchase-documents'
@@ -34,16 +40,23 @@ SUPPLIER_URL = 'suppliers'
 CONTRACTOR_URL = 'contractors'
 SUPPLIER_ACCESS_URL = 'supplier-products'
 SUPPLIER_REFUNDS_URL = 'supplier-refunds'
+SUPPLIER_BONUS = 'supplier-bonus'
 BRANDS_URL = 'brands'
+PRODUCERS_URL = 'producers'
 RECEIPT_MARKERS_URL = 'receipt-markers'
 ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
 STOCK_TAKING_DOCUMENT = 'stock-taking-documents'
 INCOMING_DOCUMENT = 'incoming-documents'
 LOSS_DOCUMENT = 'loss-documents'
 LOSS_TYPE_URL = 'loss-types'
+PEOPLE_TRAFFIC_URL = 'people-traffic'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
 SEPARATOR = ';'
+
+if six.PY3:
+    xrange = range
+
 
 if six.PY3:
     xrange = range
@@ -234,7 +247,7 @@ class Up_DW(Auth):
                 except APIUploadError as error:
                     # self._upload_data_recursively
                     self.logging.error('%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error))
-                    raise '%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error)
+                    raise APIUploadError('%s chunk #%s upload failed\n%s' % (url.upper(), chunk_num, error))
                 chunk_num += 1
             return True
         elif isinstance(data, str) and os.path.isfile(data):
@@ -303,6 +316,7 @@ class Up_DW(Auth):
 
         [{
                    'order_id': <order_id>,
+                   'date_open': <date_open>,
                    'date': <date>,
                    'terminal_id': <terminal_id>,
                    'cartitems': [
@@ -339,6 +353,7 @@ class Up_DW(Auth):
                 'loyalty_id',
                 'order_id',
                 'order_no',
+                'date_open',
                 'date',
                 'product_id',
                 'base_price',
@@ -351,10 +366,14 @@ class Up_DW(Auth):
             'terminal_id',
             'cashier_id',
             'order_id',
-            'date']
+            'date'
+        ]
 
         if 'loyalty_id' in columns:
             group_columns.append('loyalty_id')
+
+        if 'date_open' in columns:
+            group_columns.append('date_open')
 
         uniq_col = 'order_id'
 
@@ -364,7 +383,7 @@ class Up_DW(Auth):
                                              nested_field_name, subcolumns, splitter, skip_rows, index_col)
         return True
 
-    @_check_columns(['category_id', 'name', 'parent_id'])
+    @_check_columns(['category_id', 'name', 'parent_id', 'hidden'])
     def upload_categories(self, categories, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
         Функція відправляє на сервер дані категорій
@@ -375,6 +394,7 @@ class Up_DW(Auth):
                    'category_id': <category_id>,
                    'name': <name>,
                    'parent_id': <parent_id>,
+                   'hidden': <hidden>,
             }
             ...
         ]
@@ -382,7 +402,7 @@ class Up_DW(Auth):
         або шлях до файлу *.csv
 
         columns: list,
-                 default: ['category_id', 'name', 'parent_id']
+                 default: ['category_id', 'name', 'parent_id', 'hidden']
                  Упорядкований список колонок таблиці в файлі <filename>.csv
         splitter: str, default: ";"
                  Розділювач даних в <filename>.csv
@@ -391,7 +411,8 @@ class Up_DW(Auth):
         if columns is None:
             columns = ['category_id',
                        'name',
-                       'parent_id'
+                       'parent_id',
+                       'hidden'
                        ]
         self._send_chunk_data(CATEGORIES_API_URL,
                               categories,
@@ -409,7 +430,7 @@ class Up_DW(Auth):
 
         [
             {
-                   'product_id': <category_id>,
+                   'product_id': <product_id>,
                    'barcode': <code>,
                    'article': <article>,
                    'name': <name>,
@@ -463,6 +484,133 @@ class Up_DW(Auth):
                                      splitter=splitter
                                      )
 
+    @_check_columns(['shop_id', 'product_id', 'date_from'])
+    def upload_product_matrix(self, product_matrix, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по асортиментній матриці
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'product_id': <product_id>,
+                   'shop_id': <shop_id>
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'product_id',
+                        'shop_id'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'product_id',
+                'shop_id',
+                'date_from',
+                'date_to',
+            ]
+
+        return self._send_chunk_data(PRODUCT_MATRIX_API_URL,
+                                     product_matrix,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
+    @_check_columns(['marker_id', 'name', 'parent_id'])
+    def upload_markers(self, markers, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по маркерам
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'marker_id': <product_id>,
+                   'name': <shop_id>,
+                   'parent_id': <parent_id>
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'marker_id',
+                        'name',
+                        'status',
+                        'parent_id'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'marker_id',
+                'name',
+                'status',
+                'parent_id'
+            ]
+
+        return self._send_chunk_data(MARKERS_API_URL,
+                                     markers,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
+    @_check_columns(['marker_id', 'product_id'])
+    def upload_marker_products(self, marker_products, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по товарам маркерів
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'marker_id': <marker_id>,
+                   'product_id': <product_id>
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'marker_id',
+                        'product_id'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'marker_id',
+                'product_id'
+            ]
+
+        return self._send_chunk_data(MARKER_PRODUCTS_API_URL,
+                                     marker_products,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
     @_check_columns(['unit_id', 'name'])
     def upload_units(self, units, columns=None, subcolumns=None, splitter=SEPARATOR):
 
@@ -506,7 +654,8 @@ class Up_DW(Auth):
                    'loyalty_id': <loyalty_id>,
                    'cardno': <cardno>,
                    'client_name': <client_name>,
-                   'client_birthday': <client_birthday>
+                   'client_birthday': <client_birthday>,
+                   'group_id': <group_id>
 
             }
             ...
@@ -524,7 +673,8 @@ class Up_DW(Auth):
                            'sex',
                            'client_birthday',
                            'address',
-                           'email'
+                           'email',
+                           'group_id'
                            ]
                  Упорядкований список колонок таблиці в файлі <filename>.csv
         splitter: str, default: ";"
@@ -539,7 +689,8 @@ class Up_DW(Auth):
                        'is_male',
                        'address',
                        'email',
-                       'phone'
+                       'phone',
+                       'group_id'
                        ]
 
         return self._send_chunk_data(LOYALTY_API_URL,
@@ -548,6 +699,68 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter
                                      )
+
+    @_check_columns(['format_id', 'name'])
+    def upload_loyalty_formats(self, formats, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервіс дані по форматам клієнтів ПЛ
+        Приймає список об’єктів магазина в форматі
+
+        [
+            {
+                'format_id': <format_id>,
+                'name': <name>,
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['format_id', 'name']
+        return self._send_chunk_data(LOYALTY_FORMAT_API_URL,
+                                     formats,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['group_id', 'name'])
+    def upload_loyalty_groups(self, loyalty_groups, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу дані по группам клієнтів програми лояльності
+        Приймає список об’єктів в форматі
+
+        [
+            {
+                   'group_id': <group_id>,
+                   'name': <name>,
+            }
+            ...
+        ]
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['group_id', 'group_id']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['group_id', 'name']
+        return self._send_chunk_data(LOYALTY_GROUP_API_URL,
+                                     loyalty_groups,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
 
     @_check_columns(['cashier_id', 'name'])
     def upload_cashiers(self, cashiers, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -1116,6 +1329,37 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter)
 
+    @_check_columns(['producer_id', 'name'])
+    def upload_producers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер виробників
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "producer_id": <producer_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['producer_id', 'name',
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['producer_id', 'name']
+
+        return self._send_chunk_data(PRODUCERS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
     @_check_columns(['marker_id', 'name'])
     def upload_receipt_markers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
 
@@ -1240,6 +1484,38 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter, chunk_size=1)
 
+    @_check_columns(["manager_id", "shop_id", "product_id","date_from", "date_to"])
+    def upload_categorymanageraccess(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
+                           index_col=False):
+        """
+        Функція завантажує на сервіс товари менеджера і магазини, за які цей менеджер відповідає
+        Приймає список об`єктів в форматі
+        [
+            {
+                "shop_id": <shop_id>,
+                "product_id": <product_id>,
+                "manager_id": <manager_id>,
+                "date_from":  <date_from>,
+                "date_to":  <date_to>
+            }
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['manager_id','shop_id','product_id','date_from','date_to']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+
+        """
+        if columns is None:
+            columns = ["manager_id", "shop_id", "product_id","date_from","date_to"]
+        return self._send_chunk_data(CATEGORYMANAGERACCESS_API_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
     @_check_columns(
         ['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id', 'qty', 'price',
          'total_price'])
@@ -1304,6 +1580,60 @@ class Up_DW(Auth):
 
         return self._upload_data_with_nested_object(docs, SUPPLIER_REFUNDS_URL, columns, group_columns, uniq_col,
                                                     nested_field_name, subcolumns, splitter, skip_rows, index_col)
+
+    @_check_columns(['supplierbonus_id', 'supplier_id', 'shop_id', 'bonus_sum', 'date_from', 'date_to'])
+    def upload_supplier_bonus(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер ретро бонусы
+        Приймає список об`єктів в форматі
+
+         [
+            {
+                "supplierbonus_id": <document_id>,
+                "shop_id": <shop_id>,
+                "supplier_id": <supplier_id>,
+                "bonus_sum": <bonus_sum>,
+                "date_from": <date_from>
+                "date_to": <date_to>
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: [
+                    'supplierbonus_id',
+                    'supplier_id',
+                    'shop_id',
+                    'product_id',
+                    'category_manager_id'
+                    'bonus_sum',
+                    'date_from',
+                    'date_to'
+                 ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'supplierbonus_id',
+                'supplier_id',
+                'shop_id',
+                'product_id',
+                'category_manager_id' 
+                'bonus_sum',
+                'date_from',
+                'date_to'
+            ]
+
+        return self._send_chunk_data(SUPPLIER_BONUS,
+                                     docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
 
     @_check_columns(['document_id', 'supplier_id', 'shop_id', 'date', 'receive_document_id', 'total_price'])
     def upload_order_pay_documents(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -1546,6 +1876,38 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter)
 
+    @_check_columns(['traffic_id', 'shop_id', 'date'])
+    def upload_people_traffic(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція завантажує на сервіс трафік клієнтів по магазинам
+        Приймає список об’єктів в форматі
+
+        [
+            {
+                'traffic_id': <traffic_id>,
+                'shop_id': <shop_id>,
+                'date': <date>
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['traffic_id', 'shop_id', 'date']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['traffic_id', 'shop_id', 'date']
+        return self._send_chunk_data(PEOPLE_TRAFFIC_URL,
+                                     shops,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
     def upload_to_service(self, email, cache=True):
         """
         Функція запускає на сервері процес завантаження і кешування
@@ -1606,9 +1968,10 @@ class Up_DW(Auth):
                 date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
         if clear_list is None and date_list is not None:
                 if shops is not None:
-                    clear_list = [{"date": date, "shop_id": shop} for shop in shops for date in date_list]
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d'), "shop_id": shop}
+                                  for shop in shops for date in date_list]
                 else:
-                    clear_list = [{"date": date} for date in date_list]
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d')} for date in date_list]
         if clear_list is None:
             clear_list = []
 
@@ -1616,6 +1979,56 @@ class Up_DW(Auth):
                   'email': email,
                   'data': clear_list
                   }
+        return self._post('utils', data=params)['results']
+
+    def clear_product_inventory(self, email, date_from=None, date_to=None, date_list=None, shops=None, clear_list=None):
+        """
+        Функція викликає на сервері процес видалення залишків.
+         Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
+        """
+
+        if date_list is None:
+            if date_from is not None and date_to is not None:
+                date_list = [x.date() for x in pandas.date_range(date_from, date_to)]
+        if clear_list is None and date_list is not None:
+                if shops is not None:
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d'), "shop_id": shop}
+                                  for shop in shops for date in date_list]
+                else:
+                    clear_list = [{"dt": date.strftime('%Y-%m-%d')} for date in date_list]
+        if clear_list is None:
+            clear_list = []
+
+        params = {'function': 'clear_product_inventory',
+                  'email': email,
+                  'data': clear_list
+                  }
+        return self._post('utils', data=params)['results']
+
+    def clear_documents(self, email, document_type, clear_list=None):
+        """
+        Функція викликає на сервері процес видалення залишків.
+         Після його завершення користувач отримає повідомлення
+        на вказану адресу електронної пошти
+
+        clear_list = [{'dt': <date>, 'shop_id': <shop_id>}, ...]
+
+        """
+
+        available_document_types = (
+            'receipts', 'inventory', 'purchases', 'receives', 'supplier_refunds', 'stocktaking', 'incoming', 'losses'
+        )
+        assert document_type in available_document_types, 'Invalid `document_type` argument specified'
+
+        clear_list = clear_list or []
+
+        params = {
+            'function': 'clear_documents',
+            'email': email,
+            'data': clear_list,
+            'document_type': document_type
+        }
         return self._post('utils', data=params)['results']
 
     def clear_client(self, email, dlt=False):

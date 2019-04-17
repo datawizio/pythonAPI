@@ -274,25 +274,6 @@ class Auth:
             df = df.join(sum_series, how='inner')
         return df
 
-    def register_user(self, name, email, password):
-        """
-        Функція реєструє нового користувача і повертає створену пару API_KEY:API_SECRET
-
-        Returns
-        -----------------
-        Повертає словник
-        {
-          'API_KEY': <API_KEY>,
-          'API_SECRET': <API_SECRET>
-
-        }
-
-        """
-        params = {'name': name,
-                  'email': email,
-                  'password': password}
-        return self._post('register_user', data=params)['results']
-
     def generate_secret(self, email, password):
         self.API_KEY, self.API_SECRET = email, password
         self.load_client()
