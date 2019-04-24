@@ -6,6 +6,8 @@ from __future__ import print_function
 import tempfile, os, copy
 import requests, json
 from requests.exceptions import RequestException
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from oauthlib.oauth2 import LegacyApplicationClient
 from requests_oauthlib import OAuth2Session
 import logging
@@ -113,6 +115,10 @@ class Auth:
                                                     "client_secret": CLIENT_SECRET},
                                auto_refresh_url="https://%s/%s/" % (self.HEADERS['Host'], "api/o/token"),
                                token_updater=self._token_update_handler)
+        retry = Retry(total=3, read=3, connect=3)
+        adapter = HTTPAdapter(max_retries=retry)
+        client.mount('http://', adapter)
+        client.mount('https://', adapter)
         # client = requests.Session()
         # client.auth = httpsBasicAuth(self.API_KEY, self.API_SECRET)
         return client
