@@ -45,6 +45,9 @@ SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 API_SHOPS = "shops"
+SUPPLIERS='suppliers'
+SHOP_FORMATS='shop-format'
+SHOP_GROUPS='shop-groups'
 GET_RAW_CATEGORIES = "categories"
 RECEIPTS_DETAIL = "receipts-detail"
 INVENTORY_DETAIL = "inventory-detail"
@@ -818,9 +821,62 @@ class DW(Auth):
             Returns
             ----------
             Повертає список всіх продуктів клієнта (Ітератор, де кожен елемент це масив)
+        [
+            {"url": "<product_url>", "product_id": "<product_id>","name": "<product_name>", "article": "<product_article>",
+            "barcode": "<product_barcode>", "category_id": "<product_category_id>", "category_url": "<product_category_url>",
+            "brand_id": "<product_brand_id>", "brand_url": "<product_brand_url>", "producer_id": "<producer_id>",
+            "producer_url": "<product_producer_url>","unit_id": "product_unit_id",unit_url": "product_unit_url",
+            "active": bool:<product_is_active>, "width": "<product_width>", height": "<product_height>",
+            "depth": "<product_depth>"},
+            ...
+        ]
         """
         kwargs.update({"page_size": chunk_size})
         return self._get_raw_data(GET_PRODUCT, params=kwargs)
+    def raw_suppliers(self, chunk_size=10000, **kwargs):
+        """
+
+         Returns
+            ---------
+            Повертає список всіх постачальників (Ітератор, де кожен елемент це масив)
+        [
+            {"url": "<supplier_url>", "supplier_id": "<supplier_id>", "name": "<supplier_name>", "supplier_code": "<supplier_code>",
+            "phone": "<supplier_phone>", "commodity_credit_days": <commodity_credit_days>, "address": "<supplier_address>" },
+            ...
+        ]
+        """
+        kwargs.update({'page_size':chunk_size})
+        return self._get_raw_data(SUPPLIERS, params=kwargs)
+
+    def raw_shop_formats(self, chunk_size=10000, **kwargs):
+        """
+            Returns
+            ---------
+            Повертає список всіх форматів магазинів (Ітератор, де кожен елемент це масив)
+        [
+            {"url": "<shop-format_url>",
+            "format_id": "<shop-format_format_id>",
+            "name": "shop-format_name"},
+            ...
+        ]
+
+        """
+        kwargs.update({'page_size':chunk_size})
+        return self._get_raw_data(SHOP_FORMATS, params=kwargs)
+
+    def raw_shop_groups(self, chunk_size=10000, **kwargs):
+        """
+         Returns
+            ---------
+            Повертає список всіх груп магазинів(Ітератор, де кожен елемент це масив)
+            [
+            {"group_id": "<group_id>", "name": "<name>","parent_id": "<parent_id>", "parent_url": "<parend_url>",
+             "region_codes": ["<region_codes>"]} ,
+             ...
+            ]
+        """
+        kwargs.update({"page_size": chunk_size})
+        return self._get_raw_data(SHOP_GROUPS, params=kwargs)
 
     def _custom_load(self, url, **params):
         page = 1
