@@ -2049,7 +2049,8 @@ class Up_DW(Auth):
         """
 
         available_document_types = (
-            'receipts', 'inventory', 'purchases', 'receives', 'supplier_refunds', 'stocktaking', 'incoming', 'losses'
+            'receipts', 'inventory', 'purchases', 'receives', 'supplier_refunds',
+            'stocktaking', 'incoming', 'losses', 'relocates'
         )
         assert document_type in available_document_types, 'Invalid `document_type` argument specified'
 
