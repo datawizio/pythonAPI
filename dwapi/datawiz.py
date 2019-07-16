@@ -45,14 +45,16 @@ SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 API_SHOPS = "shops"
-SUPPLIERS='suppliers'
-SHOP_FORMATS='shop-format'
-SHOP_GROUPS='shop-groups'
+SUPPLIERS = 'suppliers'
+SHOP_FORMATS = 'shop-format'
+SHOP_GROUPS = 'shop-groups'
 GET_RAW_CATEGORIES = "categories"
 RECEIPTS_DETAIL = "receipts-detail"
 INVENTORY_DETAIL = "inventory-detail"
 PROMOTION_DETAIL = "promotion-access-detail"
 OLAP_REPORT = "olap-report"
+PURCHASE_DOCUMENTS = "purchase-documents"
+RECEIVE_DOCUMENTS = "receive-documents"
 
 if six.PY3:
     unicode = str
@@ -833,6 +835,7 @@ class DW(Auth):
         """
         kwargs.update({"page_size": chunk_size})
         return self._get_raw_data(GET_PRODUCT, params=kwargs)
+
     def raw_suppliers(self, chunk_size=10000, **kwargs):
         """
 
@@ -845,7 +848,7 @@ class DW(Auth):
             ...
         ]
         """
-        kwargs.update({'page_size':chunk_size})
+        kwargs.update({'page_size': chunk_size})
         return self._get_raw_data(SUPPLIERS, params=kwargs)
 
     def raw_shop_formats(self, chunk_size=10000, **kwargs):
@@ -861,7 +864,7 @@ class DW(Auth):
         ]
 
         """
-        kwargs.update({'page_size':chunk_size})
+        kwargs.update({'page_size': chunk_size})
         return self._get_raw_data(SHOP_FORMATS, params=kwargs)
 
     def raw_shop_groups(self, chunk_size=10000, **kwargs):
@@ -889,6 +892,17 @@ class DW(Auth):
             page += 1
             yield results["table"]
 
+    def _custom_load_get(self, url, **params):
+        page = 1
+        has_next = True
+        while has_next:
+            params.update({'page': page})
+            data = self._get(url, params=params)
+            results = data.get('results', [])
+            has_next = data.get("next", False)
+            page += 1
+            yield results
+
     @_check_params
     def raw_inventory(self, date_from=None, date_to=None, chunk_size=10000, **kwargs):
         """
@@ -898,6 +912,36 @@ class DW(Auth):
         """
         kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
         return self._custom_load(INVENTORY_DETAIL, **kwargs)
+
+    @_check_params
+    def raw_purchase_documents(self,
+                               date_from=None,
+                               date_to=None,
+                               chunk_size=10000,
+                               **kwargs
+                               ):
+        """
+            Returns
+            ----------
+            Повертає документи закупок продуктів у постачальників (Ітератор, де кожен елемент це масив)
+        """
+        kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
+        return self._custom_load_get(PURCHASE_DOCUMENTS, **kwargs)
+
+    @_check_params
+    def raw_receive_documents(self,
+                              date_from=None,
+                              date_to=None,
+                              chunk_size=10000,
+                              **kwargs
+                              ):
+        """
+            Returns
+            ----------
+            Повертає документи поставок продуктів у магазини (Ітератор, де кожен елемент це масив)
+        """
+        kwargs.update({"page_size": chunk_size, "date_from": date_from, "date_to": date_to})
+        return self._custom_load_get(RECEIVE_DOCUMENTS, **kwargs)
 
     @_check_params
     def sale_items(self,
