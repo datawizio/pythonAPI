@@ -1965,6 +1965,10 @@ class Up_DW(Auth):
                   'cache': cache}
         return self._post('utils', data=params)['results']
 
+    def update_client(self, email):
+        params = {'function': 'update_client', 'email': email}
+        return self._post('utils', data=params)['results']
+
     def cache(self, email, date_from=None, date_to=None, date_list=None, shops=None, cache_list=None):
         """
         Функція запускає на сервері процес кешування
