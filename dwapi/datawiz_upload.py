@@ -25,6 +25,7 @@ LOYALTY_API_URL = 'loyalty'
 LOYALTY_GROUP_API_URL = 'loyalty-group'
 LOYALTY_FORMAT_API_URL = 'loyalty-format'
 SHOPS_API_URL = 'shops'
+STORAGES_API_URL = 'storages'
 SHOP_GROUPS_API_URL = 'shop-groups'
 SHOP_FORMAT_API_URL = 'shop-format'
 SALES_API_URL = 'sale'
@@ -821,6 +822,35 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=SEPARATOR)
 
+    @_check_columns(['storage_id', 'name'])
+    def upload_storages(self, storages, columns=None, subcolumns=None, splitter=SEPARATOR):
+        """
+        Функція відправляє серверу дані по складах
+        Приймає список об’єктів термінала в форматі
+
+        [
+            {
+                'storage_id': <storage_id>,
+                'name': <name>
+            }
+            ...
+        ]
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: ['storage_id',  'name']
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+        if columns is None:
+            columns = ['storage_id', 'name']
+        return self._send_chunk_data(STORAGES_API_URL,
+                                     storages,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=SEPARATOR)
+
     @_check_columns(['shop_id', 'name', 'address', 'open_date', "group_id", "format_id"])
     def upload_shops(self, shops, columns=None, subcolumns=None, splitter=SEPARATOR):
         """
@@ -959,7 +989,7 @@ class Up_DW(Auth):
                                      subcolumns=subcolumns,
                                      splitter=splitter)
 
-    @_check_columns(['shop_id', 'product_id', 'date', 'qty', 'original_price', 'stock_total_price'])
+    @_check_columns(['shop_id', 'product_id','storage_id', 'date', 'qty', 'original_price', 'stock_total_price'])
     def upload_inventory(self, stocks, columns=None, subcolumns=None, splitter=SEPARATOR):
 
         """
@@ -988,7 +1018,7 @@ class Up_DW(Auth):
 
         if columns is None:
             columns = ['invoice_id', 'invoice_inner_id',
-                       'shop_id', 'order_id',
+                       'shop_id', 'storage_id', 'order_id',
                        'provider_id', 'date', 'employee_id',
                        'product_id', 'qty', 'original_price',
                        'stock_total_price']
