@@ -15,6 +15,7 @@ from functools import wraps
 RECEIPTS_API_URI = 'receipts'
 CATEGORIES_API_URL = 'categories'
 PRODUCTS_API_URL = 'products'
+PRODUCT_PHOTO_API_URL = 'product-photo'
 PRODUCT_MATRIX_API_URL = 'product-matrix'
 MARKERS_API_URL = 'markers'
 MARKER_PRODUCTS_API_URL = 'marker-products'
@@ -477,6 +478,47 @@ class Up_DW(Auth):
             ]
 
         return self._send_chunk_data(PRODUCTS_API_URL,
+                                     products,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter
+                                     )
+
+    @_check_columns(['product_id', 'photo'])
+    def upload_products_photo(self, products, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція відправляє серверу картинки товарів
+        Приймає список об’єктів товарів в форматі
+
+        [
+            {
+                   'product_id': <product_id>,
+                   'photo': <photo_url | photo_encoded_in_base64>,
+
+            }
+            ...
+        ]
+
+        або шлях до файлу *.csv
+
+        columns: list,
+                 default: [
+                        'product_id',,
+                        'photo'
+                        ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = [
+                'product_id',
+                'photo'
+            ]
+
+        return self._send_chunk_data(PRODUCT_PHOTO_API_URL,
                                      products,
                                      columns=columns,
                                      subcolumns=subcolumns,
