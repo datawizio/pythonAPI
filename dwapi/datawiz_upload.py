@@ -45,6 +45,8 @@ SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 SUPPLIER_BONUS_TYPE_URL = 'supplier-bonus-types'
 SUPPLIER_BONUS = 'supplier-bonus'
 BRANDS_URL = 'brands'
+ASSORTMENT_TYPE_URL = 'assortment-type'
+ASSORTMENT_INFO_URL = 'assortment-info'
 PRODUCERS_URL = 'producers'
 RECEIPT_MARKERS_URL = 'receipt-markers'
 ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
@@ -1426,6 +1428,72 @@ class Up_DW(Auth):
             columns = ['producer_id', 'name']
 
         return self._send_chunk_data(PRODUCERS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['assortment_type_id', 'name'])
+    def upload_assortment_type(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер типи асортимента
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "assortment_type_id": <assortment_type_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['assortment_type_id', 'name',
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['assortment_type_id', 'name']
+
+        return self._send_chunk_data(ASSORTMENT_TYPE_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+
+    @_check_columns(['assortment_info_id', 'assortment_type_id', 'shop_id', 'product_id', 'dt'])
+    def upload_assortment_info(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер історію асортимента
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "assortment_info_id": <assortment_info_id>,
+                "assortment_type_id": <assortment_type_id>,
+                "shop_id": <shop_id>,
+                "product_id": <product_id>,
+                "dt": <dt>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['assortment_info_id', 'assortment_type_id', 'shop_id', 'product_id', 'dt'
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['assortment_info_id', 'assortment_type_id', 'shop_id', 'product_id', 'dt']
+
+        return self._send_chunk_data(ASSORTMENT_INFO_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter)
