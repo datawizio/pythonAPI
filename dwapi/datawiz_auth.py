@@ -32,6 +32,7 @@ CLIENT_SECRET = "HoQuYukvjCFB9G4hCZABFF7ryL10J9lT9QQsQsgDP21EdMs7JVvsdiN2e1Uuosb
 HEADERS = {'Host': 'api.datawiz.io', 'Accept': 'application/json', 'Date': "Tue, 10 Nov 2015 18:11:05 GMT",
            'Content-Type': 'application/json'}
 API_URL = 'https://api.datawiz.io/api/v1'
+API_URL_V3 = 'https://api.datawiz.io/api/v3'
 # DEFAULT_HOST = 'bi.datawiz.io'
 DEFAULT_HOST = 'api.datawiz.io'
 FAILED_FILE = '%s_failed.csv'
@@ -201,7 +202,7 @@ class Auth:
                     self.client.post('%s/%s/' % (API_URL, resource_url), data=json.dumps(data), headers=headers)
                     # Повертаємо індекси невірних елементів, для подальшої обробки, або виводу користувачу
                     return failed_elements
-                raise APIUploadError('Error, while loading data. %s' % str(error.get('detail', '')))
+                raise APIUploadError('Error, while loading data. %s' % str(error.get('detail', error)))
             # Якщо сервер не повернув помилку, як об’єкт json
             except ValueError:
                 raise APIUploadError('%s %s' % (response.status_code, response.reason))
