@@ -1070,7 +1070,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(STOCK_API_URL, stocks,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)
+                                     splitter=splitter, chunk_size=5000)
 
     @_check_columns(['supplier_id', 'name'])
     def upload_suppliers(self, suppliers, columns=None, subcolumns=None, splitter=SEPARATOR):
