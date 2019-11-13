@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 from __future__ import absolute_import
-from .datawiz_auth import Auth, APIGetError, APIUploadError
+from .datawiz_auth import Auth, APIGetError, APIUploadError, API_URL_V3
 import pandas
 import os
 import math
@@ -45,6 +45,8 @@ SUPPLIER_REFUNDS_URL = 'supplier-refunds'
 SUPPLIER_BONUS_TYPE_URL = 'supplier-bonus-types'
 SUPPLIER_BONUS = 'supplier-bonus'
 BRANDS_URL = 'brands'
+ASSORTMENT_TYPE_URL = 'assortment-type'
+ASSORTMENT_INFO_URL = 'assortment-info'
 PRODUCERS_URL = 'producers'
 RECEIPT_MARKERS_URL = 'receipt-markers'
 ORDER_PAY_DOCUMENTS_URL = 'order-pay-documents'
@@ -55,6 +57,7 @@ LOSS_TYPE_URL = 'loss-types'
 PEOPLE_TRAFFIC_URL = 'people-traffic'
 RECEIPTS_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_SIZE = 2000
+DEFAULT_CHUNK_SIZE_V3 = 50000
 SEPARATOR = ';'
 
 
@@ -135,6 +138,21 @@ class Up_DW(Auth):
             return wrapper
 
         return decorator
+
+    def api_v3(func):
+
+        def inner(self, *args, **kwargs):
+
+            _API_URL = self.API_URL
+            self.API_URL = API_URL_V3
+
+            ret = func(self, *args, **kwargs)
+
+            self.API_URL = _API_URL
+
+            return ret
+
+        return inner
 
     def _send_chunk_data(self,
                          resource_url,
@@ -1069,7 +1087,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(STOCK_API_URL, stocks,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)
+                                     splitter=splitter, chunk_size=5000)
 
     @_check_columns(['supplier_id', 'name'])
     def upload_suppliers(self, suppliers, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -1184,6 +1202,15 @@ class Up_DW(Auth):
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter)
+
+    @api_v3
+    def upload_suppliers_access_v3(self, data, columns=None, chunk_size=DEFAULT_CHUNK_SIZE_V3):
+        return self._send_chunk_data(
+            resource_url=SUPPLIER_ACCESS_URL,
+            data=data,
+            columns=columns,
+            chunk_size=chunk_size,
+        )
 
     @_check_columns(['document_id', 'shop_id', 'supplier_id', 'receive_date',
                      'responsible', 'order_date', 'product_id', 'qty', 'price', 'price_total'])
@@ -1427,6 +1454,72 @@ class Up_DW(Auth):
             columns = ['producer_id', 'name']
 
         return self._send_chunk_data(PRODUCERS_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+    @_check_columns(['assortment_type_id', 'name'])
+    def upload_assortment_type(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер типи асортимента
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "assortment_type_id": <assortment_type_id>,
+                "name": <name>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['assortment_type_id', 'name',
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['assortment_type_id', 'name']
+
+        return self._send_chunk_data(ASSORTMENT_TYPE_URL, docs,
+                                     columns=columns,
+                                     subcolumns=subcolumns,
+                                     splitter=splitter)
+
+
+    @_check_columns(['assortment_info_id', 'assortment_type_id', 'shop_id', 'product_id', 'dt'])
+    def upload_assortment_info(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR):
+
+        """
+        Функція завантажує на сервер історію асортимента
+        Приймає список об`єктів в форматі
+
+        [
+            {
+                "assortment_info_id": <assortment_info_id>,
+                "assortment_type_id": <assortment_type_id>,
+                "shop_id": <shop_id>,
+                "product_id": <product_id>,
+                "dt": <dt>,
+            }
+        ]
+         або шлях до файлу *.csv
+
+         columns: list,
+                 default: ['assortment_info_id', 'assortment_type_id', 'shop_id', 'product_id', 'dt'
+                           ]
+                 Упорядкований список колонок таблиці в файлі <filename>.csv
+        splitter: str, default: ";"
+                 Розділювач даних в <filename>.csv
+        """
+
+        if columns is None:
+            columns = ['assortment_info_id', 'assortment_type_id', 'shop_id', 'product_id', 'dt']
+
+        return self._send_chunk_data(ASSORTMENT_INFO_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
                                      splitter=splitter)
