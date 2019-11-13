@@ -359,7 +359,8 @@ class Up_DW(Auth):
                 'base_price',
                 'price',
                 'qty',
-                'total_price']
+                'total_price',
+                'total_tax']
 
         group_columns = [
             'shop_id',

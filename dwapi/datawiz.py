@@ -40,6 +40,7 @@ UTILS = 'utils'
 LOYALTY_SALES = 'loyalty-sales'
 LOST_SALES = 'lost-sales'
 SALES_PLAN = 'sales-plan'
+PRODUCT_MOTHLY = 'product-monthly'
 SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_DYNAMICS = 'sale-dynamics'
@@ -1539,6 +1540,84 @@ class DW(Auth):
             return pd.DataFrame()
 
         return pd.DataFrame.from_records(result)
+
+    @_check_params
+    def get_products_monthly(self,
+                             products=None, product_codes=None,
+                             shops=None):
+
+        """
+        Parameters:
+        ------------------
+        products: list(int) список товарів
+        product_codes: list(str) артикули, або штрихкоди
+        shops: int, list
+        id магазину, або список id, по яких буде робитись вибірка
+
+
+        Returns
+        ------------
+        Повертає JSON формату:
+        "results": {
+        "columns": [
+            "qty",
+            "receipts_qty",
+            "turnover",
+            "profit",
+            "original_price",
+            "price",
+            "stock_qty",
+            "stock_total_price",
+            "stock_original_price"
+        ],
+        "data": {
+            product_id: {
+                "name": str,
+                "category": str,
+                "article": str,
+                "barcode": str,
+                "image": url,
+                "promo": bool,
+                "avg_price": float,
+                "yesterday_stock_qty": float,
+                "yesterday_sale_qty": float,
+                "week_sale_qty": float
+                %column%: {
+                    "index": [
+                        Вчорашня дата - 30 днів
+                        ...
+                        Вчорашня дата
+                    ],
+                    "data": [
+                        ...
+                    ]
+                },
+
+            }
+        Де:
+        len(index)==len(data) для кожної колонки
+
+
+
+
+
+
+        Examples
+        -----------------
+        dw = datawiz.DW()
+        dw.get_products_monthly( shops=16,products=[67082457, 47854])
+        """
+
+        params = {'shops': shops}
+        if products:
+            params['products'] = products
+        elif product_codes:
+            params['product_codes'] = product_codes
+        result = self._post(PRODUCT_MOTHLY, data=params)['results']
+        if not result:
+            return {}
+
+        return result
 
     @_check_params
     def get_sales(self,
