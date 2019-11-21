@@ -1469,7 +1469,7 @@ class DW(Auth):
                        by='qty',
                        show='name',
                        on='category',
-                       per_shop=True):
+                       group_level=1):
 
         """
         Parameters:
@@ -1489,7 +1489,7 @@ class DW(Auth):
         тип виводу для іменованих колонок
         on: str {'category', 'shops'}
         параметр визначає, як саме групувати результати (по категоріях чи магазинах)
-
+        group_level: int (0-2) рівень плану, де 0 - без поділу, 1 - по групам магазинів, 2 - по магазинам
 
         Returns
         ------------
@@ -1535,7 +1535,7 @@ class DW(Auth):
                   'select': by,
                   'on': on,
                   'show': show,
-                  'group_level': 2 if per_shop else 1}
+                  'group_level': group_level}
 
         result = self._post(SALES_PLAN, data=params)['results']
         if not result:
