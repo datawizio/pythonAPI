@@ -1468,7 +1468,8 @@ class DW(Auth):
                        shops=None,
                        by='qty',
                        show='name',
-                       on='category'):
+                       on='category',
+                       per_shop=True):
 
         """
         Parameters:
@@ -1533,7 +1534,8 @@ class DW(Auth):
                   'shops': shops,
                   'select': by,
                   'on': on,
-                  'show': show}
+                  'show': show,
+                  'group_level': 2 if per_shop else 1}
 
         result = self._post(SALES_PLAN, data=params)['results']
         if not result:
@@ -1663,7 +1665,7 @@ class DW(Auth):
         params = {'date_from': date_from,
                   'date_to': date_to,
                   'sale_id': sale_id,
-                  'sale_shops': shops}
+                  'shops': shops}
         result = self._post(SALES, data=params)['results']
         if not result:
             return pd.DataFrame()
