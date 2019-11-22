@@ -43,6 +43,7 @@ SALES_PLAN = 'sales-plan'
 PRODUCT_MOTHLY = 'product-monthly'
 SALES = 'sales'
 SALE_INFO = 'sale-info'
+SALE_PRODUCTS = 'sale-products'
 SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 API_SHOPS = "shops"
@@ -1704,6 +1705,35 @@ class DW(Auth):
         if not result:
             return pd.DataFrame()
         return pd.DataFrame.from_records(result)
+
+    def get_sale_products(self, date, shops=None):
+        """
+                Parameters
+                -------------
+                date: str
+                дата
+                shops: int, list
+                id магазину, або список id, для яких хочемо отримати
+                результат
+
+                Returns
+                -------------
+                Повертає список акційних товарів в той день у тому магазині
+
+
+
+                Examples
+                --------------
+                dw = datawiz.DW()
+                dw.get_sale_products('2019-01-01')
+
+                Повернути список акційних товарів на '2019-01-01' по всіх магазинах
+
+                """
+        params = {'date': date,
+                  'shops': shops}
+        result = self._post(SALE_PRODUCTS, data=params)['results']
+        return result
 
     @_check_params
     def get_sales_dynamics(self,
