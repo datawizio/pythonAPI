@@ -1583,21 +1583,17 @@ class DW(Auth):
                 "avg_price": float,
                 "yesterday_stock_qty": float,
                 "yesterday_sale_qty": float,
-                "week_sale_qty": float
-                %column%: {
-                    "index": [
-                        Вчорашня дата - 30 днів
-                        ...
-                        Вчорашня дата
-                    ],
-                    "data": [
+                "week_sale_qty": float,
+                "chart":{
+                "x": [список дат]
+                %column%: [
                         ...
                     ]
+                    }
                 },
 
             }
-        Де:
-        len(index)==len(data) для кожної колонки
+
 
 
 
