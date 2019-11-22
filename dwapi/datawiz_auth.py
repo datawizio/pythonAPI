@@ -164,6 +164,24 @@ class Auth:
             return response.json()
         return {}
 
+    def _delete(self, resourse_url, data=None):
+        headers = self.HEADERS
+        headers['content-type'] = "application/json"
+        data = json.dumps(data or {})
+
+        try:
+            response = self.client.delete('%s/%s/' % (self.API_URL, resourse_url), data=data, headers=headers)
+        except RequestException as error:
+            self.logging.error('%s delete failed\n%s' % (resourse_url.upper(), error))
+            return False
+
+        if response.status_code != requests.codes.NO_CONTENT:
+            error = response.json()
+            self.logging.error('%s delete failed\n%s' % (resourse_url.upper(), str(error.get('detail', error))))
+            return False
+
+        return True
+
     def _post(self, resource_url, params=None, data={}, chunk=False):
         """
         Функція підписує заголовки, указані в SIGNATURE_HEADERS, і відправляє запит до вказаного API resource_url,
