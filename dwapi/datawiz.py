@@ -44,6 +44,7 @@ PRODUCT_MOTHLY = 'product-monthly'
 SALES = 'sales'
 SALE_INFO = 'sale-info'
 SALE_PRODUCTS = 'sale-products'
+GET_SALE_PRODUCTS = 'get-sale-products'
 SALE_DYNAMICS = 'sale-dynamics'
 BRANDS = 'brands'
 API_SHOPS = "shops"
@@ -1731,7 +1732,7 @@ class DW(Auth):
                 """
         params = {'date': date,
                   'shops': shops}
-        result = self._post(SALE_PRODUCTS, data=params)['results']
+        result = self._post(GET_SALE_PRODUCTS, data=params)['results']
         return result
 
     @_check_params
