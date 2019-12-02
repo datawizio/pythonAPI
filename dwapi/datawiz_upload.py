@@ -1692,6 +1692,30 @@ class Up_DW(Auth):
         }
         return self._delete(CATEGORYMANAGERACCESS_API_URL, data=data)
 
+    def delete_supplieraccess(self, identifiers):
+        """
+        Функція видаляє об'єкти з сервісу
+        {
+            identifiers: ["19e0658f5144f7ac8da583e995ebe952", "b8da6dcc8c5c6e0d5052a0f1d34552de", ...]
+        }
+        """
+        data = {
+            'identifiers': identifiers
+        }
+        return self._delete(SUPPLIER_ACCESS_URL, data=data)
+
+    def delete_promoaccess(self, identifiers):
+        """
+        Функція видаляє об'єкти з сервісу
+        {
+            identifiers: ["19e0658f5144f7ac8da583e995ebe952", "b8da6dcc8c5c6e0d5052a0f1d34552de", ...]
+        }
+        """
+        data = {
+            'identifiers': identifiers
+        }
+        return self._delete(SALES_ACCESS_API_URL, data=data)
+
     @_check_columns(
         ['document_id', 'supplier_id', 'shop_id', 'date', 'product_id', 'receive_document_id', 'qty', 'price',
          'total_price'])
