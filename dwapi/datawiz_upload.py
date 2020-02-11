@@ -1087,7 +1087,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(STOCK_API_URL, stocks,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter, chunk_size=5000)
+                                     splitter=splitter, chunk_size=10000)
 
     @_check_columns(['supplier_id', 'name'])
     def upload_suppliers(self, suppliers, columns=None, subcolumns=None, splitter=SEPARATOR):
@@ -1201,7 +1201,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(SUPPLIER_ACCESS_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)
+                                     splitter=splitter, chunk_size=10000)
 
     @api_v3
     def upload_suppliers_access_v3(self, data, columns=None, chunk_size=DEFAULT_CHUNK_SIZE_V3):
@@ -1617,7 +1617,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(SALES_ACCESS_API_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)
+                                     splitter=splitter, chunk_size=10000)
 
     @_check_columns(['shops', 'identifier', 'name', 'date_from', 'products'])
     def upload_categorymanagers(self, docs, columns=None, subcolumns=None, splitter=SEPARATOR, skip_rows=1,
@@ -1678,7 +1678,7 @@ class Up_DW(Auth):
         return self._send_chunk_data(CATEGORYMANAGERACCESS_API_URL, docs,
                                      columns=columns,
                                      subcolumns=subcolumns,
-                                     splitter=splitter)
+                                     splitter=splitter, chunk_size=10000)
 
     def delete_categorymanageraccess(self, identifiers):
         """
