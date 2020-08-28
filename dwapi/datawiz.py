@@ -524,7 +524,7 @@ class DW(Auth):
 
         if not isinstance(receipt_id, int):
             raise TypeError("Incorrect param type")
-        receipt = self._post(GET_RECEIPT, params={'receipt_id': receipt_id})
+        receipt = self._post(GET_RECEIPT, data={'receipt_id': receipt_id})
         if receipt:
             cartitems = [self._deserialize(x, fields={"price": float, 'qty': float}) for x in receipt['cartitems']]
             receipt = self._deserialize(receipt, fields={"turnover": float})
@@ -1301,7 +1301,7 @@ class DW(Auth):
                   'categories': categories,
                   'products': products,
                   'show': show,
-                  'select': ['stock_qty']}
+                  'select': by}
         result = self._post(GET_PRODUCTS_STOCK, data=params)["results"]
         if result:
             dataframe = pd.DataFrame.from_records(result)
