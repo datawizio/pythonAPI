@@ -203,7 +203,7 @@ class Auth:
 
         # Якщо сервер повертає помилку, виводимо її
         # Формат відповіді сервера {'detail':'error message'}
-        if not response.status_code in [requests.codes.OK, requests.codes.CREATED]:
+        if response.status_code not in [requests.codes.OK, requests.codes.CREATED, requests.codes.ACCEPTED]:
             try:
                 error = response.json()
                 # print error
